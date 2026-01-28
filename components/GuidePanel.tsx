@@ -4,10 +4,10 @@ import React, { useState, useEffect } from 'react';
 const GuidePanel: React.FC = () => {
   const [currentUrl, setCurrentUrl] = useState('');
   const [copiedWebhook, setCopiedWebhook] = useState(false);
-  const [activeTab, setActiveTab] = useState<'android' | 'vercel'>('vercel');
 
   useEffect(() => {
-    setCurrentUrl(window.location.origin);
+    // Gebruik de stabiele Vercel URL, niet de deployment-hash
+    setCurrentUrl('https://welzijn-monitor.vercel.app');
   }, []);
 
   const copyWebhook = () => {
@@ -18,114 +18,60 @@ const GuidePanel: React.FC = () => {
   };
 
   return (
-    <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm transition-all">
-      <div className="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
-        <h2 className="text-sm font-bold flex items-center gap-2 text-slate-800">
-          <i className="fas fa-terminal text-indigo-500"></i> INSTALLATIE PROTOCOL
-        </h2>
-        <div className="flex gap-1">
-          <div className="w-2 h-2 rounded-full bg-rose-400"></div>
-          <div className="w-2 h-2 rounded-full bg-amber-400"></div>
-          <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-        </div>
-      </div>
-      
-      <div className="flex border-b border-slate-200 bg-slate-50/50">
-        <button 
-          onClick={() => setActiveTab('vercel')}
-          className={`flex-1 py-4 px-6 text-xs font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'vercel' ? 'bg-white text-indigo-600 border-b-2 border-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-        >
-          <i className="fas fa-rocket"></i> STAP 1: VERCEL ACTIVEREN
-        </button>
-        <button 
-          onClick={() => setActiveTab('android')}
-          className={`flex-1 py-4 px-6 text-xs font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'android' ? 'bg-white text-indigo-600 border-b-2 border-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-        >
-          <i className="fas fa-mobile-alt"></i> STAP 2: TELEFOON KOPPELEN
-        </button>
-      </div>
-
-      <div className="p-6">
-        {activeTab === 'vercel' ? (
-          <div className="space-y-6">
-            <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl flex items-center gap-4">
-              <div className="bg-indigo-600 text-white w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-lg">
-                <i className="fas fa-power-off"></i>
-              </div>
-              <div>
-                <p className="text-sm font-bold text-indigo-900">Bijna klaar! Laatste actie in Vercel:</p>
-                <p className="text-xs text-indigo-700">Je hebt de sleutel opgeslagen, nu moeten we de server herstarten.</p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">1</div>
-                <p className="text-xs text-slate-600">Klik in Vercel helemaal bovenaan op de naam van je project: <strong>welzijn-monitor</strong>.</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">2</div>
-                <p className="text-xs text-slate-600">Klik in het menu dat nu verschijnt op de tab <strong>Deployments</strong> (naast Overview en Activity).</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">3</div>
-                <p className="text-xs text-slate-600">Klik bij de bovenste rij op de <strong>drie puntjes (...)</strong> en kies <strong>Redeploy</strong>.</p>
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-900 rounded-xl border border-slate-800 font-mono">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-3 h-3 rounded-full bg-rose-500"></div>
-                <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-                <span className="text-[10px] text-slate-500 ml-2">VERCEL DEPLOYMENT MANAGER</span>
-              </div>
-              <div className="text-[11px] text-slate-300">
-                <div className="flex justify-between border-b border-slate-800 py-2">
-                  <span>[TAB] OVERVIEW</span>
-                  <span>[TAB] ACTIVITY</span>
-                  <span className="text-indigo-400 font-bold underline underline-offset-4">[TAB] DEPLOYMENTS</span>
-                </div>
-                <div className="py-3 text-slate-500">
-                  Selecteer bovenste item -> Klik ... -> <span className="text-white font-bold">REDEPLOY</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-center p-4">
-               <i className="fas fa-arrow-down text-indigo-300 animate-bounce"></i>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="p-5 bg-indigo-50 border border-indigo-100 rounded-xl">
-              <label className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mb-1 block">
-                Webhook URL voor MacroDroid
-              </label>
-              <div className="flex items-center gap-2 mt-2">
-                <code className="flex-1 bg-white px-4 py-2 rounded-lg text-indigo-600 text-[11px] font-mono border border-indigo-200 break-all select-all shadow-sm">
-                  {currentUrl}/api/heartbeat
+    <section className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+      <div className="p-8">
+        <div className="flex flex-col md:flex-row gap-8">
+          <div className="flex-1 space-y-6">
+            <h2 className="text-xl font-black italic tracking-tighter text-slate-900 flex items-center gap-3">
+              <i className="fas fa-robot text-indigo-600"></i> Stap 2: Telefoon Koppelen
+            </h2>
+            
+            <div className="p-5 bg-slate-50 border border-slate-200 rounded-2xl">
+              <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3">Gebruik deze EXACTE link in MacroDroid:</p>
+              <div className="flex gap-2">
+                <code className="flex-1 bg-white border border-slate-200 px-4 py-3 rounded-xl text-indigo-600 font-mono text-xs break-all">
+                  https://welzijn-monitor.vercel.app/api/heartbeat
                 </code>
                 <button 
                   onClick={copyWebhook}
-                  className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold text-xs transition-all ${copiedWebhook ? 'bg-emerald-600 text-white' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md'}`}
+                  className={`px-6 rounded-xl font-bold text-xs transition-all ${copiedWebhook ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
                 >
-                  <i className={`fas ${copiedWebhook ? 'fa-check' : 'fa-copy'}`}></i>
-                  {copiedWebhook ? 'OK' : 'Kopieer'}
+                  {copiedWebhook ? 'OK!' : 'KOPIEER'}
                 </button>
               </div>
             </div>
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-               <h4 className="text-xs font-bold text-slate-800 mb-2">Hoe stel je dit in?</h4>
-               <ul className="text-[11px] text-slate-600 space-y-2">
-                 <li><i className="fas fa-chevron-right text-indigo-400 mr-2"></i> Open MacroDroid op je Android telefoon.</li>
-                 <li><i className="fas fa-chevron-right text-indigo-400 mr-2"></i> Maak een macro: Trigger = Toestel Ontgrendeld.</li>
-                 <li><i className="fas fa-chevron-right text-indigo-400 mr-2"></i> Actie = HTTP Request (POST).</li>
-                 <li><i className="fas fa-chevron-right text-indigo-400 mr-2"></i> Plak bovenstaande URL in het veld 'URL'.</li>
-               </ul>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <p className="text-[10px] font-black text-slate-800 uppercase mb-2">Actie Type</p>
+                <p className="text-xs text-slate-500">HTTP Request</p>
+              </div>
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <p className="text-[10px] font-black text-slate-800 uppercase mb-2">Methode</p>
+                <p className="text-xs text-emerald-600 font-bold">POST</p>
+              </div>
             </div>
           </div>
-        )}
+
+          <div className="flex-1 bg-indigo-600 rounded-3xl p-8 text-white relative overflow-hidden">
+            <i className="fas fa-bug absolute bottom-[-20px] right-[-10px] text-white/10 text-9xl"></i>
+            <h3 className="text-lg font-bold mb-4">Mocht het niet werken...</h3>
+            <ul className="text-xs space-y-4 text-indigo-100 relative z-10">
+              <li className="flex gap-3">
+                <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center shrink-0 font-bold text-[10px]">!</span>
+                <span>Check in MacroDroid het <strong>"User Log"</strong> (hoofdscherm). Staat daar "HTTP request failed"? Check dan je internet of de URL.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center shrink-0 font-bold text-[10px]">!</span>
+                <span>Zorg dat <strong>POST</strong> is geselecteerd, niet GET.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center shrink-0 font-bold text-[10px]">!</span>
+                <span>Zorg dat de URL geen spaties bevat aan het begin of eind.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
     </section>
   );

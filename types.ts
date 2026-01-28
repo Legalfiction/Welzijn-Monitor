@@ -6,11 +6,16 @@ export enum SystemStatus {
   DISABLED = 'DISABLED'
 }
 
+export interface EmergencyContact {
+  id: string;
+  name: string;
+  method: 'Email' | 'Telegram' | 'SMS';
+  address: string;
+}
+
 export interface SystemSettings {
-  morningCheckTime: string; // e.g. "09:00"
-  contactName: string;
-  contactMethod: 'Email' | 'Telegram' | 'SMS';
-  contactAddress: string;
+  morningCheckTime: string;
+  contacts: EmergencyContact[];
   alertMessageTemplate: string;
   heartbeatIntervalMinutes: number;
 }
