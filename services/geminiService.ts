@@ -1,10 +1,19 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// We initialiseren de client pas wanneer we hem echt nodig hebben.
+// Dit voorkomt dat de app crasht bij het opstarten als de omgevingsvariabele nog niet klaar is.
+function getAiClient() {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API_KEY ontbreekt. Zorg dat deze in Vercel is ingesteld.");
+  }
+  return new GoogleGenAI({ apiKey });
+}
 
 export async function generateRefinedAlert(userName: string, contactName: string, lastSeenStr: string) {
   try {
+    const ai = getAiClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `Je bent een professioneel veiligheidssysteem. 
@@ -27,6 +36,7 @@ export async function generateRefinedAlert(userName: string, contactName: string
 
 export async function auditSafetyLogs(logs: any[]) {
   try {
+    const ai = getAiClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `Audit deze systeem logs op patronen van falen of onregelmatige activiteit: ${JSON.stringify(logs)}. 
