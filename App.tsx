@@ -53,7 +53,7 @@ const App: React.FC = () => {
     }
   }, []);
 
-  const sendHeartbeat = useCallback((source: string = 'Android (Simulatie)') => {
+  const sendHeartbeat = useCallback((source: string = 'App Activiteit') => {
     const newLog: HeartbeatLog = {
       id: Math.random().toString(36).substr(2, 9),
       timestamp: Date.now(),
@@ -97,10 +97,7 @@ const App: React.FC = () => {
       if (systemStatus !== SystemStatus.ALERT_TRIGGERED) {
         setSystemStatus(SystemStatus.WARNING);
         
-        if (batteryLevel && batteryLevel < 5) {
-          console.warn("Lage batterij gedetecteerd. Alarm uitgesteld.");
-          return;
-        }
+        if (batteryLevel && batteryLevel < 5) return;
 
         const lastSeenStr = lastActivityTimestamp === 0 ? "Nooit" : new Date(lastActivityTimestamp).toLocaleString('nl-NL');
         const refinedMessage = await generateRefinedAlert("Gebruiker", settings.contactName, lastSeenStr);
@@ -134,101 +131,77 @@ const App: React.FC = () => {
   const lastHeartbeat = heartbeats[0]?.timestamp || null;
 
   return (
-    <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-6 safe-padding">
       <DashboardHeader status={systemStatus} lastHeartbeat={lastHeartbeat} />
 
-      {/* Guide Section */}
       <GuidePanel />
 
-      <main className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Linkerkant: Acties en Logica */}
-        <div className="lg:col-span-8 space-y-8">
+      <main className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-8 space-y-6">
           
-          <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 shadow-xl relative overflow-hidden">
-             <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm relative overflow-hidden">
+             <div className="absolute top-0 left-0 w-1.5 h-full bg-indigo-500"></div>
              <div className="flex flex-wrap items-center justify-between gap-4">
                <div>
-                  <h3 className="text-lg font-semibold mb-1">Simulatie & Test</h3>
-                  <p className="text-sm text-slate-400">Gebruik deze knoppen om de werking te controleren.</p>
+                  <h3 className="text-lg font-bold text-slate-900 mb-1">Handmatige Acties</h3>
+                  <p className="text-sm text-slate-500">Test je verbinding en alarmen.</p>
                </div>
-               <div className="flex gap-3">
+               <div className="flex flex-wrap gap-3">
                  <button 
                   onClick={() => sendHeartbeat()}
-                  className="bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg border border-slate-600 transition-all flex items-center gap-2 text-sm"
+                  className="bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold py-2.5 px-6 rounded-xl border border-slate-200 transition-all flex items-center gap-2 text-sm shadow-sm active:scale-95"
                  >
-                   <i className="fas fa-heartbeat text-indigo-400"></i> Stuur Hartslag
+                   <i className="fas fa-heartbeat text-rose-500"></i> Hartslag
                  </button>
                  <button 
                   onClick={testAlert}
                   disabled={isTestingAlert}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-lg shadow-lg transition-all flex items-center gap-2 text-sm disabled:opacity-50"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg transition-all flex items-center gap-2 text-sm disabled:opacity-50 active:scale-95"
                  >
-                   <i className="fas fa-paper-plane"></i> {isTestingAlert ? 'Testen...' : 'Test Alarm'}
+                   <i className="fas fa-paper-plane"></i> {isTestingAlert ? '...' : 'Test Alarm'}
                  </button>
                </div>
              </div>
           </div>
 
-          <ArchitectureDiagram />
-
-          <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 shadow-xl">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <i className="fas fa-robot text-indigo-400"></i> AI Veiligheidsanalyse (Gemini)
+                <h3 className="text-lg font-bold flex items-center gap-2 text-slate-900">
+                  <i className="fas fa-robot text-indigo-600"></i> AI Gezondheidscheck
                 </h3>
                 <button 
                   onClick={performAudit}
                   disabled={isAuditing}
-                  className="text-xs font-bold uppercase tracking-widest text-indigo-400 hover:text-indigo-300 disabled:opacity-50"
+                  className="text-xs font-bold uppercase tracking-widest text-indigo-600 hover:text-indigo-800 disabled:opacity-50"
                 >
-                  {isAuditing ? 'Analyseren...' : 'Start Analyse'}
+                  {isAuditing ? 'Analyseert...' : 'Start Audit'}
                 </button>
              </div>
-             <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700 min-h-[80px] flex items-center">
-               {auditResult ? (
-                 <p className="text-sm text-slate-300 leading-relaxed italic">"{auditResult}"</p>
-               ) : (
-                 <p className="text-sm text-slate-500 italic">Klik op 'Start Analyse' om je activiteitspatroon door de AI te laten controleren op onregelmatigheden.</p>
-               )}
+             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 min-h-[80px] flex items-center">
+               <p className="text-sm text-slate-600 leading-relaxed italic">
+                 {auditResult || "Klik op 'Start Audit' voor een patronen-check door Gemini."}
+               </p>
              </div>
+          </div>
+
+          <div className="hidden md:block">
+            <ArchitectureDiagram />
           </div>
         </div>
 
-        {/* Rechterkant: Instellingen en Geschiedenis */}
-        <div className="lg:col-span-4 space-y-8">
+        <div className="lg:col-span-4 space-y-6">
           <SettingsPanel settings={settings} onUpdate={setSettings} />
 
-          <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 shadow-xl max-h-[350px] overflow-y-auto">
-             <h3 className="text-sm font-bold uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-2">
-               <i className="fas fa-history text-slate-400"></i> Recente Hartslagen
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm max-h-[400px] overflow-y-auto">
+             <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+               <i className="fas fa-history"></i> Activiteitslog
              </h3>
              <div className="space-y-2">
-               {heartbeats.length === 0 && <p className="text-xs text-slate-600 italic">Wachten op eerste signaal...</p>}
+               {heartbeats.length === 0 && <p className="text-xs text-slate-400 italic">Geen activiteit...</p>}
                {heartbeats.map((log) => (
-                 <div key={log.id} className="flex items-center justify-between p-2 bg-slate-800/30 rounded border border-slate-700/50">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
-                      <span className="text-xs text-slate-300">{log.source}</span>
-                    </div>
-                    <span className="text-[10px] text-slate-500 mono">{new Date(log.timestamp).toLocaleTimeString('nl-NL')}</span>
-                 </div>
-               ))}
-             </div>
-          </div>
-
-          <div className="bg-slate-900 border border-red-900/20 rounded-xl p-6 shadow-xl max-h-[350px] overflow-y-auto">
-             <h3 className="text-sm font-bold uppercase tracking-widest text-red-500/70 mb-4 flex items-center gap-2">
-               <i className="fas fa-bell"></i> Alarm Geschiedenis
-             </h3>
-             <div className="space-y-3">
-               {alerts.length === 0 && <p className="text-xs text-slate-600 italic">Geen alarmen verzonden.</p>}
-               {alerts.map((alert) => (
-                 <div key={alert.id} className="p-3 bg-red-900/5 border border-red-900/20 rounded-lg">
-                    <div className="flex justify-between items-center mb-1">
-                      <p className="text-[10px] text-red-400 font-bold">{alert.recipient}</p>
-                      <p className="text-[9px] text-slate-500 mono">{new Date(alert.timestamp).toLocaleTimeString('nl-NL')}</p>
-                    </div>
-                    <p className="text-[11px] text-slate-400 leading-snug">{alert.content}</p>
+                 <div key={log.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <span className="text-xs font-medium text-slate-700">{log.source}</span>
+                    <span className="text-[11px] text-slate-400 mono">{new Date(log.timestamp).toLocaleTimeString('nl-NL')}</span>
                  </div>
                ))}
              </div>
@@ -236,8 +209,8 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      <footer className="text-center text-slate-600 pt-8 pb-4">
-        <p className="text-xs font-medium">GuardianSwitch &copy; 2024 - Uw persoonlijke digitale veiligheid.</p>
+      <footer className="text-center text-slate-400 pt-8 pb-4">
+        <p className="text-[10px] font-bold tracking-widest uppercase">GUARDIANSWITCH CLOUD PROTOCOL v2.0</p>
       </footer>
     </div>
   );

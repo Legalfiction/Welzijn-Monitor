@@ -11,15 +11,15 @@ const DashboardHeader: React.FC<Props> = ({ status, lastHeartbeat }) => {
   const getStatusConfig = () => {
     switch (status) {
       case SystemStatus.ACTIVE:
-        return { label: 'ACTIEF', color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/50', icon: 'fa-check-circle' };
+        return { label: 'ACTIEF', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200', icon: 'fa-check-circle' };
       case SystemStatus.WARNING:
-        return { label: 'WAARSCHUWING', color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/50', icon: 'fa-exclamation-triangle' };
+        return { label: 'WAARSCHUWING', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', icon: 'fa-exclamation-triangle' };
       case SystemStatus.ALERT_TRIGGERED:
-        return { label: 'ALARM GEACTIVEERD', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/50', icon: 'fa-radiation' };
+        return { label: 'ALARM', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200', icon: 'fa-radiation' };
       case SystemStatus.DISABLED:
-        return { label: 'UITGESCHAKELD', color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/50', icon: 'fa-power-off' };
+        return { label: 'UIT', color: 'text-slate-500', bg: 'bg-slate-50', border: 'border-slate-200', icon: 'fa-power-off' };
       default:
-        return { label: 'ONBEKEND', color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/50', icon: 'fa-question-circle' };
+        return { label: 'ONBEKEND', color: 'text-slate-400', bg: 'bg-slate-50', border: 'border-slate-200', icon: 'fa-question-circle' };
     }
   };
 
@@ -29,26 +29,26 @@ const DashboardHeader: React.FC<Props> = ({ status, lastHeartbeat }) => {
   return (
     <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-white mb-1">
-          Guardian<span className="text-indigo-500">Switch</span>
+        <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 mb-1">
+          Guardian<span className="text-indigo-600">Switch</span>
         </h1>
-        <p className="text-slate-400 text-sm flex items-center gap-2">
-          <i className="fas fa-user-shield text-indigo-400"></i> Veiligheidsmonitoring Actief voor: <span className="text-slate-200">Systeem Operator</span>
+        <p className="text-slate-500 text-sm flex items-center gap-2">
+          <i className="fas fa-user-shield text-indigo-500"></i> Veiligheidsmonitoring: <span className="text-slate-900 font-medium">Systeem Operator</span>
         </p>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className={`flex items-center gap-3 px-4 py-2 rounded-full border ${config.bg} ${config.border} shadow-lg`}>
-          <i className={`fas ${config.icon} ${config.color} animate-pulse`}></i>
+      <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-3 px-4 py-2 rounded-full border ${config.bg} ${config.border} shadow-sm`}>
+          <i className={`fas ${config.icon} ${config.color} ${status !== SystemStatus.DISABLED ? 'animate-pulse' : ''}`}></i>
           <div>
-            <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500 leading-none mb-1">Systeem Status</p>
+            <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400 leading-none mb-1">Status</p>
             <p className={`text-xs font-bold ${config.color} leading-none`}>{config.label}</p>
           </div>
         </div>
         
-        <div className="bg-slate-800/50 border border-slate-700 px-4 py-2 rounded-xl">
-           <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1">Laatste Hartslag</p>
-           <p className="text-xs font-medium text-slate-200 mono">{lastSeenStr}</p>
+        <div className="bg-white border border-slate-200 px-4 py-2 rounded-xl shadow-sm">
+           <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-1">Laatste Hartslag</p>
+           <p className="text-xs font-semibold text-slate-700 mono">{lastSeenStr}</p>
         </div>
       </div>
     </header>

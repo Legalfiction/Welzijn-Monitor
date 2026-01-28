@@ -4,9 +4,9 @@ import { GoogleGenAI } from "@google/genai";
 // We initialiseren de client pas wanneer we hem echt nodig hebben.
 // Dit voorkomt dat de app crasht bij het opstarten als de omgevingsvariabele nog niet klaar is.
 function getAiClient() {
-  const apiKey = process.env.API_KEY;
+  const apiKey = process.env.API_KEY?.trim();
   if (!apiKey) {
-    throw new Error("API_KEY ontbreekt. Zorg dat deze in Vercel is ingesteld.");
+    throw new Error("API_KEY ontbreekt of is leeg. Zorg dat deze in Vercel is ingesteld.");
   }
   return new GoogleGenAI({ apiKey });
 }
