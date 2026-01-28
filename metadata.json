@@ -1,0 +1,5 @@
+{
+  "name": "GuardianSwitch: Welzijnsmonitor",
+  "description": "Een geavanceerd 'Dodemansknop' systeem voor welzijnsbewaking. Het monitort digitale hartslagen en activeert veiligheidsprotocollen bij inactiviteit.",
+  "requestFramePermissions": []
+}
