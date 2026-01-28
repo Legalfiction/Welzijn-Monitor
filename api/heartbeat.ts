@@ -9,22 +9,24 @@ export default function handler(
   const clientIp = request.headers['x-forwarded-for'] || request.socket.remoteAddress;
   const userAgent = request.headers['user-agent'] || 'Onbekend';
 
-  // DIT VERSCHIJNT IN JE VERCEL LOGS
+  // Uitgebreide logging voor debuggen via Vercel Logs
   console.log("------------------------------------------------");
-  console.log("🚨 [INCOMING SIGNAL] Hartslag gedetecteerd!");
-  console.log("📅 Tijd: " + timestamp);
-  console.log("🌐 IP: " + clientIp);
-  console.log("📱 Device: " + userAgent);
-  console.log("🛠 Methode: " + request.method);
-  console.log("------------------------------------------------");
-
-  // Reageer op alles om te bevestigen dat de endpoint leeft
+  console.log("🚨 [HARTBEAT ONTVANGEN]");
+  console.log("📅 TIJD: " + timestamp);
+  console.log("🌐 BRON-IP: " + clientIp);
+  console.log("📱 APPARAAT: " + userAgent);
+  console.log("🛠 METHODE: " + request.method);
+  
   if (request.method === 'POST') {
-    return response.status(200).json({ 
-      status: "ontvangen", 
-      time: timestamp 
-    });
+    const body = request.body;
+    console.log("📦 DATA: ", JSON.stringify(body));
   }
+  console.log("------------------------------------------------");
 
-  return response.status(200).send(`Systeem Online. IP geregistreerd: ${clientIp}`);
+  // Altijd een succes response sturen naar MacroDroid
+  return response.status(200).json({ 
+    status: "ok", 
+    message: "Signaal ontvangen door GuardianSwitch Cloud",
+    received_at: timestamp 
+  });
 }
