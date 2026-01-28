@@ -1,24 +1,25 @@
 
 export default function handler(req, res) {
-  // CORS Headers
+  // Zeer strikte CORS voor browsers
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    res.status(200).end();
+    return;
   }
 
-  const timestamp = new Date().toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' });
+  const timestamp = new Date().toISOString();
   
-  console.log("************************************************");
-  console.log("🚀 SIGNAAL ONTVANGEN: " + timestamp);
-  console.log("🛠  METHODE: " + req.method);
-  console.log("************************************************");
+  // Deze log verschijnt in Vercel Logs
+  console.log(`[${timestamp}] API Heartbeat aangeroepen via ${req.method}`);
 
-  return res.status(200).json({ 
-    status: "ok", 
+  res.status(200).json({ 
+    status: "success", 
+    message: "GuardianSwitch Cloud is online",
     serverTime: timestamp,
-    received: true 
+    method: req.method
   });
 }
