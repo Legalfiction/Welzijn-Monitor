@@ -13,7 +13,7 @@ const App: React.FC = () => {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        return (parsed && Array.isArray(parsed.contacts)) ? parsed : DEFAULT_SETTINGS;
+        return { ...DEFAULT_SETTINGS, ...parsed };
       } catch (e) { return DEFAULT_SETTINGS; }
     }
     return DEFAULT_SETTINGS;
@@ -26,8 +26,10 @@ const App: React.FC = () => {
 
   const [isPinging, setIsPinging] = useState(false);
   const [pingStatus, setPingStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [debugLogs, setDebugLogs] = useState<string[]>(["Systeem gereed. Wachten op actie..."]);
+  const [debugLogs, setDebugLogs] = useState<string[]>(["Systeem gereed. Gebruik de 'Cloud URL' bij Instellingen om te verbinden."]);
   const logEndRef = useRef<HTMLDivElement>(null);
+
+  const isPreview = window.location.href.includes('googleusercontent.com') || window.location.href.includes('aistudio.google.com');
 
   const addLog = (msg: string) => {
     const time = new Date().toLocaleTimeString();
@@ -38,53 +40,60 @@ const App: React.FC = () => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [debugLogs]);
 
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+  }, [settings]);
+
   const testServerConnection = async () => {
     if (isPinging) return;
     
+    // Validatie
+    const baseApi = settings.cloudUrl ? settings.cloudUrl.replace(/\/$/, '') : window.location.origin;
+    const apiUrl = `${baseApi}/api/heartbeat`;
+
+    if (isPreview && !settings.cloudUrl) {
+      addLog("⚠️ WAARSCHUWING: Vul eerst je Vercel URL in bij 'Instellingen'!");
+      setPingStatus('error');
+      return;
+    }
+
     setIsPinging(true);
     setPingStatus('idle');
-    addLog("🚀 Start verbindingstest...");
+    addLog(`🚀 Verbinden met: ${apiUrl}`);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
       controller.abort();
-      addLog("❌ TIMEOUT: Geen reactie van server na 8 seconden.");
-    }, 8000);
+      addLog("❌ TIMEOUT: Geen reactie. Is de URL correct en de API online?");
+    }, 10000);
 
     try {
-      const apiUrl = '/api/heartbeat';
-      addLog(`📡 Roep aan: ${apiUrl}`);
-
       const response = await fetch(apiUrl, { 
         method: 'POST',
+        mode: 'cors', // Forceer CORS
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ test: true }),
+        body: JSON.stringify({ source: 'Web Test Dashboard', isPreview: isPreview }),
         signal: controller.signal
       });
       
       clearTimeout(timeoutId);
-      addLog(`📥 Status ontvangen: ${response.status} ${response.statusText}`);
+      addLog(`📥 Ontvangen: ${response.status} ${response.statusText}`);
       
       const text = await response.text();
-      addLog(`📝 Ruwe data: ${text.substring(0, 50)}...`);
-
+      
       if (response.ok) {
         setPingStatus('success');
-        addLog("✅ SUCCES: Verbinding met Cloud is stabiel.");
-        setHeartbeats(prev => [{ id: Date.now().toString(), timestamp: Date.now(), source: 'Handmatige Test' }, ...prev.slice(0, 14)]);
+        addLog("✅ SUCCES! Je Vercel Cloud is bereikbaar.");
+        setHeartbeats(prev => [{ id: Date.now().toString(), timestamp: Date.now(), source: 'Vercel Cloud Test' }, ...prev.slice(0, 14)]);
       } else {
         setPingStatus('error');
-        addLog(`❌ FOUT: Server gaf een probleem aan (Code ${response.status}).`);
+        addLog(`❌ FOUT ${response.status}: De API weigerde de toegang.`);
       }
     } catch (err: any) {
       clearTimeout(timeoutId);
       setPingStatus('error');
-      if (err.name === 'AbortError') {
-        addLog("🚨 AFGEBROKEN: Netwerkverbinding duurde te lang.");
-      } else {
-        addLog(`🚨 NETWERKFOUT: ${err.message || 'Onbekende fout'}`);
-        addLog("Tip: Controleer of je internet hebt en of Vercel online is.");
-      }
+      addLog(`🚨 FOUT: ${err.message || 'Verbinding geblokkeerd'}`);
+      addLog("Tip: Check of je Vercel URL eindigt op '.vercel.app'");
     } finally {
       setIsPinging(false);
     }
@@ -97,15 +106,19 @@ const App: React.FC = () => {
         lastHeartbeat={heartbeats[0]?.timestamp || null} 
       />
 
+      {isPreview && !settings.cloudUrl && (
+        <div className="bg-amber-50 border-2 border-amber-200 p-4 rounded-3xl flex items-center gap-4 animate-bounce">
+          <i className="fas fa-triangle-exclamation text-amber-500 text-xl"></i>
+          <p className="text-xs font-bold text-amber-800">
+            JE BENT IN PREVIEW MODE. Vul je <span className="underline">Vercel URL</span> in bij de instellingen om de API te testen!
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-8 space-y-6">
           <section className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm">
-            <div className="flex justify-between items-start mb-8">
-              <div>
-                <h2 className="text-2xl font-black italic tracking-tighter">SYSTEEM DIAGNOSTIEK</h2>
-                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest mt-1">Test de Cloud-integratie</p>
-              </div>
-            </div>
+            <h2 className="text-2xl font-black italic tracking-tighter mb-8 uppercase">SYSTEEM DIAGNOSTIEK</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
@@ -119,19 +132,12 @@ const App: React.FC = () => {
                   }`}
                 >
                   {isPinging ? <i className="fas fa-sync animate-spin"></i> : <i className="fas fa-bolt"></i>}
-                  {isPinging ? 'TESTEN...' : 'VERBINDING TESTEN'}
+                  {isPinging ? 'VERBINDEN...' : 'TEST VERCEL CLOUD'}
                 </button>
                 
-                <div className="bg-slate-900 rounded-3xl p-5 shadow-inner border border-slate-800">
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Systeem Logboek</span>
-                    <div className="flex gap-1">
-                      <div className="w-2 h-2 rounded-full bg-rose-500"></div>
-                      <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-                      <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                    </div>
-                  </div>
-                  <div className="font-mono text-[10px] space-y-1 h-32 overflow-y-auto text-slate-300">
+                <div className="bg-slate-900 rounded-3xl p-5 border border-slate-800">
+                  <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest block mb-2">Live Cloud Console</span>
+                  <div className="font-mono text-[9px] space-y-1 h-32 overflow-y-auto text-slate-300">
                     {debugLogs.map((log, i) => (
                       <div key={i} className="border-l border-slate-700 pl-2 py-0.5">{log}</div>
                     ))}
@@ -141,19 +147,18 @@ const App: React.FC = () => {
               </div>
 
               <div className="bg-indigo-50 border border-indigo-100 p-6 rounded-3xl flex flex-col justify-center">
-                <h4 className="text-[10px] font-black text-indigo-700 uppercase tracking-widest mb-3">Hulp bij Chromebook</h4>
-                <p className="text-[11px] text-indigo-800/70 leading-relaxed mb-4">
-                  Omdat je geen F12 hebt, toont het zwarte schermpje hiernaast precies wat er misgaat. 
-                </p>
-                <div className="bg-white/50 p-3 rounded-xl border border-indigo-200">
-                   <p className="text-[10px] font-bold text-indigo-900">Sneltoets voor Console:</p>
-                   <code className="text-xs font-black text-indigo-600">Ctrl + Shift + J</code>
-                </div>
+                <h4 className="text-[10px] font-black text-indigo-700 uppercase tracking-widest mb-3">Hoe te testen?</h4>
+                <ol className="text-[11px] text-indigo-800/70 space-y-2">
+                  <li>1. Ga naar je <b>Vercel Dashboard</b></li>
+                  <li>2. Kopieer de URL van je site</li>
+                  <li>3. Plak deze bij <b>Cloud API URL</b> hiernaast</li>
+                  <li>4. Druk op de grote blauwe knop</li>
+                </ol>
               </div>
             </div>
           </section>
 
-          <GuidePanel />
+          <GuidePanel cloudUrl={settings.cloudUrl} />
           <ArchitectureDiagram />
         </div>
 

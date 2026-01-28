@@ -18,6 +18,7 @@ export interface SystemSettings {
   contacts: EmergencyContact[];
   alertMessageTemplate: string;
   heartbeatIntervalMinutes: number;
+  cloudUrl: string; // De basis URL van de Vercel deployment
 }
 
 export interface HeartbeatLog {
