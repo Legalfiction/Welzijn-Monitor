@@ -8,13 +8,11 @@ import ArchitectureDiagram from './components/ArchitectureDiagram';
 import GuidePanel from './components/GuidePanel';
 
 const App: React.FC = () => {
-  // We laden settings en behouden wat de gebruiker heeft ingevoerd
   const [settings, setSettings] = useState<SystemSettings>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Controleer of het een geldig object is met de benodigde velden
         return (parsed && Array.isArray(parsed.contacts)) ? parsed : DEFAULT_SETTINGS;
       } catch (e) {
         return DEFAULT_SETTINGS;
@@ -25,23 +23,41 @@ const App: React.FC = () => {
 
   const [heartbeats, setHeartbeats] = useState<HeartbeatLog[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.LOGS);
-    return saved ? JSON.parse(saved) : [];
+    try {
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
   });
 
   const [alerts, setAlerts] = useState<AlertLog[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.ALERTS);
-    return saved ? JSON.parse(saved) : [];
+    try {
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
   });
 
   const [isPinging, setIsPinging] = useState(false);
   const [pingStatus, setPingStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
+  // Centraal effect voor het opslaan van instellingen
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+  }, [settings]);
+
+  // Centraal effect voor het opslaan van logs
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(heartbeats));
+    localStorage.setItem(STORAGE_KEYS.ALERTS, JSON.stringify(alerts));
+  }, [heartbeats, alerts]);
+
   const handleUpdateSettings = (newSettings: SystemSettings) => {
+    // We updaten de state, de useEffect hierboven zorgt voor de localStorage schrijfbeurt
     setSettings(newSettings);
-    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(newSettings));
   };
 
-  // Functie om de server ECHT te testen vanuit de browser
   const testServerConnection = async () => {
     setIsPinging(true);
     setPingStatus('idle');
@@ -52,7 +68,6 @@ const App: React.FC = () => {
       });
       if (response.ok) {
         setPingStatus('success');
-        // Voeg toe aan lokale sessie log
         const newLog: HeartbeatLog = {
           id: Date.now().toString(),
           timestamp: Date.now(),
@@ -69,16 +84,10 @@ const App: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(heartbeats));
-    localStorage.setItem(STORAGE_KEYS.ALERTS, JSON.stringify(alerts));
-  }, [heartbeats, alerts]);
-
   return (
     <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-6 safe-padding text-slate-900">
       <DashboardHeader status={SystemStatus.ACTIVE} lastHeartbeat={heartbeats[0]?.timestamp || null} />
 
-      {/* COMMAND CENTER VOOR ECHTE TESTS */}
       <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 shadow-2xl overflow-hidden relative group">
         <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-indigo-500/10 to-transparent pointer-events-none"></div>
         
@@ -104,12 +113,11 @@ const App: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* LINKER KANT: TEST ACTIE */}
             <div className="bg-white/5 border border-white/10 p-6 rounded-3xl">
               <h3 className="text-white font-bold text-sm mb-4">Stap 1: Test Server Response</h3>
               <p className="text-slate-500 text-[11px] mb-6">
                 Klik op de knop hieronder om een handmatige hartslag naar de Vercel server te sturen. 
-                Als dit werkt, zie je direct een nieuwe regel verschijnen in je Vercel Logs (vergeet niet de filters te wissen!).
+                Als dit werkt, zie je direct een nieuwe regel verschijnen in je Vercel Logs.
               </p>
               
               <button 
@@ -131,7 +139,6 @@ const App: React.FC = () => {
               </button>
             </div>
 
-            {/* RECHTER KANT: UITLEG LOGS */}
             <div className="bg-black/30 border border-white/5 p-6 rounded-3xl">
               <h3 className="text-indigo-400 font-bold text-xs uppercase tracking-widest mb-4">Vercel Log Instructies</h3>
               <div className="space-y-4">
@@ -145,7 +152,7 @@ const App: React.FC = () => {
                 </div>
                 <div className="flex gap-3">
                   <span className="w-5 h-5 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
-                  <p className="text-slate-400 text-[11px]">Ontgrendel nu je telefoon. Je ziet een 🔴 verschijnen in de Vercel console.</p>
+                  <p className="text-slate-400 text-[11px]">Ontgrendel nu je telefoon. Je ziet een 🚨 verschijnen in de Vercel console.</p>
                 </div>
               </div>
             </div>

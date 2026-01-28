@@ -6,7 +6,6 @@ const GuidePanel: React.FC = () => {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    // Genereert de URL op basis van waar je NU bent
     setWebhookUrl(`${window.location.origin}/api/heartbeat`);
   }, []);
 
@@ -65,7 +64,7 @@ const GuidePanel: React.FC = () => {
             </h3>
             <div className="space-y-4 text-xs text-rose-200/70">
               <p>
-                1. <b>Batterijbesparing:</b> Ga naar je Android Instellingen > Apps > MacroDroid > Batterij. Zet deze op <b>"Onbeperkt"</b>. Anders weigert Android de verbinding op de achtergrond.
+                1. <b>Batterijbesparing:</b> Ga naar je Android Instellingen &gt; Apps &gt; MacroDroid &gt; Batterij. Zet deze op <b>"Onbeperkt"</b>. Anders weigert Android de verbinding op de achtergrond.
               </p>
               <p>
                 2. <b>Vercel Filters:</b> In je Vercel Dashboard staan de logs vaak gefilterd. Klik op de <b>X</b> in de zoekbalk om ALLES te zien.
