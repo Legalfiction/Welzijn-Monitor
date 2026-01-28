@@ -33,7 +33,7 @@ const ArchitectureDiagram: React.FC = () => {
           <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 w-60 text-center shadow-sm">
             <p className="text-[10px] font-bold uppercase text-slate-400 mb-3 tracking-widest">Logic Engine</p>
             <div className="text-[11px] text-left bg-white p-3 rounded-xl border border-slate-200 mono text-slate-600 leading-relaxed">
-              IF (time > 09:00)<br/>AND (last_log < today)<br/>THEN TRIGGER_ALARM
+              IF (time {" > "} 09:00)<br/>AND (last_log {" < "} today)<br/>THEN TRIGGER_ALARM
             </div>
           </div>
 
