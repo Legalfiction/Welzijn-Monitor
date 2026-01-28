@@ -42,19 +42,17 @@ const App: React.FC = () => {
   const [isPinging, setIsPinging] = useState(false);
   const [pingStatus, setPingStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
-  // Centraal effect voor het opslaan van instellingen
+  // Opslaan in localStorage bij wijzigingen
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
   }, [settings]);
 
-  // Centraal effect voor het opslaan van logs
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(heartbeats));
     localStorage.setItem(STORAGE_KEYS.ALERTS, JSON.stringify(alerts));
   }, [heartbeats, alerts]);
 
   const handleUpdateSettings = (newSettings: SystemSettings) => {
-    // We updaten de state, de useEffect hierboven zorgt voor de localStorage schrijfbeurt
     setSettings(newSettings);
   };
 
@@ -88,16 +86,17 @@ const App: React.FC = () => {
     <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-6 safe-padding text-slate-900">
       <DashboardHeader status={SystemStatus.ACTIVE} lastHeartbeat={heartbeats[0]?.timestamp || null} />
 
-      <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 shadow-2xl overflow-hidden relative group">
-        <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-indigo-500/10 to-transparent pointer-events-none"></div>
+      {/* Live Systeem Controle - Nu in het WIT */}
+      <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm overflow-hidden relative group">
+        <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-indigo-500/5 to-transparent pointer-events-none"></div>
         
         <div className="relative z-10">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
             <div>
-              <h2 className="text-white text-3xl font-black italic tracking-tighter">
+              <h2 className="text-slate-900 text-3xl font-black italic tracking-tighter">
                 Live Systeem Controle
               </h2>
-              <p className="text-slate-400 text-xs mt-2 uppercase tracking-widest font-bold">
+              <p className="text-slate-500 text-xs mt-2 uppercase tracking-widest font-bold">
                 Verifieer de verbinding tussen Telefoon, Server en Cloud
               </p>
             </div>
@@ -106,16 +105,16 @@ const App: React.FC = () => {
               href="https://vercel.com/aldohuizinga-gmailcoms-projects/welzijn-monitor/logs" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="bg-white/10 hover:bg-white/20 border border-white/10 text-white px-6 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 transition-all"
+              className="bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 px-6 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 transition-all"
             >
               <i className="fas fa-terminal"></i> Open Vercel Project Logs
             </a>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white/5 border border-white/10 p-6 rounded-3xl">
-              <h3 className="text-white font-bold text-sm mb-4">Stap 1: Test Server Response</h3>
-              <p className="text-slate-500 text-[11px] mb-6">
+            <div className="bg-slate-50 border border-slate-200 p-6 rounded-3xl">
+              <h3 className="text-slate-900 font-bold text-sm mb-4">Stap 1: Test Server Response</h3>
+              <p className="text-slate-500 text-[11px] mb-6 leading-relaxed">
                 Klik op de knop hieronder om een handmatige hartslag naar de Vercel server te sturen. 
                 Als dit werkt, zie je direct een nieuwe regel verschijnen in je Vercel Logs.
               </p>
@@ -126,7 +125,7 @@ const App: React.FC = () => {
                 className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-3 ${
                   pingStatus === 'success' ? 'bg-emerald-500 text-white' : 
                   pingStatus === 'error' ? 'bg-rose-500 text-white' :
-                  'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                  'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/20 active:scale-95'
                 }`}
               >
                 {isPinging ? (
@@ -139,20 +138,20 @@ const App: React.FC = () => {
               </button>
             </div>
 
-            <div className="bg-black/30 border border-white/5 p-6 rounded-3xl">
-              <h3 className="text-indigo-400 font-bold text-xs uppercase tracking-widest mb-4">Vercel Log Instructies</h3>
+            <div className="bg-indigo-50/30 border border-indigo-100 p-6 rounded-3xl">
+              <h3 className="text-indigo-600 font-bold text-xs uppercase tracking-widest mb-4">Vercel Log Instructies</h3>
               <div className="space-y-4">
                 <div className="flex gap-3">
-                  <span className="w-5 h-5 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
-                  <p className="text-slate-400 text-[11px]">Klik op de knop bovenaan om je Vercel Logs te openen.</p>
+                  <span className="w-5 h-5 bg-indigo-600/10 text-indigo-600 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
+                  <p className="text-slate-600 text-[11px]">Klik op de knop bovenaan om je Vercel Logs te openen.</p>
                 </div>
                 <div className="flex gap-3">
-                  <span className="w-5 h-5 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
-                  <p className="text-slate-400 text-[11px]">In de zoekbalk op Vercel staat vaak tekst. <strong>Klik op het kruisje (X)</strong> om alle filters te wissen.</p>
+                  <span className="w-5 h-5 bg-indigo-600/10 text-indigo-600 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
+                  <p className="text-slate-600 text-[11px]">In de zoekbalk op Vercel staat vaak tekst. <strong>Klik op het kruisje (X)</strong> om alle filters te wissen.</p>
                 </div>
                 <div className="flex gap-3">
-                  <span className="w-5 h-5 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
-                  <p className="text-slate-400 text-[11px]">Ontgrendel nu je telefoon. Je ziet een 🚨 verschijnen in de Vercel console.</p>
+                  <span className="w-5 h-5 bg-indigo-600/10 text-indigo-600 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
+                  <p className="text-slate-600 text-[11px]">Ontgrendel nu je telefoon. Je ziet een 🚨 verschijnen in de Vercel console.</p>
                 </div>
               </div>
             </div>
