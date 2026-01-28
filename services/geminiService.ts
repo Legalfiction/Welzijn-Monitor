@@ -1,19 +1,12 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-// We initialiseren de client pas wanneer we hem echt nodig hebben.
-// Dit voorkomt dat de app crasht bij het opstarten als de omgevingsvariabele nog niet klaar is.
-function getAiClient() {
-  const apiKey = process.env.API_KEY?.trim();
-  if (!apiKey) {
-    throw new Error("API_KEY ontbreekt of is leeg. Zorg dat deze in Vercel is ingesteld.");
-  }
-  return new GoogleGenAI({ apiKey });
-}
+// Initialize the GoogleGenAI client using process.env.API_KEY directly as required by guidelines.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export async function generateRefinedAlert(userName: string, contactName: string, lastSeenStr: string) {
   try {
-    const ai = getAiClient();
+    // Calling generateContent with the required model name and prompt.
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `Je bent een professioneel veiligheidssysteem. 
@@ -27,6 +20,7 @@ export async function generateRefinedAlert(userName: string, contactName: string
         maxOutputTokens: 200,
       }
     });
+    // Accessing the .text property of GenerateContentResponse directly.
     return response.text;
   } catch (error) {
     console.error("Gemini kon bericht niet genereren:", error);
@@ -36,7 +30,7 @@ export async function generateRefinedAlert(userName: string, contactName: string
 
 export async function auditSafetyLogs(logs: any[]) {
   try {
-    const ai = getAiClient();
+    // Calling generateContent to perform log audit with search grounding or similar analysis.
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `Audit deze systeem logs op patronen van falen of onregelmatige activiteit: ${JSON.stringify(logs)}. 
@@ -46,6 +40,7 @@ export async function auditSafetyLogs(logs: any[]) {
         maxOutputTokens: 300,
       }
     });
+    // Accessing the .text property of GenerateContentResponse directly.
     return response.text;
   } catch (error) {
     console.error("Gemini audit mislukt:", error);

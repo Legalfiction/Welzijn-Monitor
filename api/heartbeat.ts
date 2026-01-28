@@ -5,28 +5,42 @@ export default function handler(
   request: VercelRequest,
   response: VercelResponse
 ) {
-  const timestamp = new Date().toLocaleString('nl-NL');
-  const clientIp = request.headers['x-forwarded-for'] || request.socket.remoteAddress;
-  const userAgent = request.headers['user-agent'] || 'Onbekend';
+  // Voeg CORS headers toe zodat de browser de aanvraag accepteert
+  response.setHeader('Access-Control-Allow-Credentials', 'true');
+  response.setHeader('Access-Control-Allow-Origin', '*');
+  response.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  response.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
 
-  // Uitgebreide logging voor debuggen via Vercel Logs
-  console.log("------------------------------------------------");
-  console.log("🚨 [HARTBEAT ONTVANGEN]");
-  console.log("📅 TIJD: " + timestamp);
-  console.log("🌐 BRON-IP: " + clientIp);
-  console.log("📱 APPARAAT: " + userAgent);
-  console.log("🛠 METHODE: " + request.method);
-  
-  if (request.method === 'POST') {
-    const body = request.body;
-    console.log("📦 DATA: ", JSON.stringify(body));
+  // Reageer direct op preflight requests (OPTIONS)
+  if (request.method === 'OPTIONS') {
+    return response.status(200).end();
   }
-  console.log("------------------------------------------------");
 
-  // Altijd een succes response sturen naar MacroDroid
+  const timestamp = new Date().toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' });
+  
+  // LOGGING DIRECT STARTEN
+  console.log("\n\n************************************************");
+  console.log("🚀 [SIGNAL RECEIVED] - " + timestamp);
+  console.log("🛠  METHOD: " + request.method);
+  
+  try {
+    if (request.method === 'POST') {
+      const body = request.body;
+      console.log("📦 DATA: ", typeof body === 'string' ? body : JSON.stringify(body));
+    }
+  } catch (e) {
+    console.error("❌ Fout bij loggen van body:", e);
+  }
+  
+  console.log("************************************************\n\n");
+
+  // Geef DIRECT antwoord zodat de browser niet hoeft te wachten
   return response.status(200).json({ 
     status: "ok", 
-    message: "Signaal ontvangen door GuardianSwitch Cloud",
-    received_at: timestamp 
+    serverTime: timestamp,
+    received: true
   });
 }
