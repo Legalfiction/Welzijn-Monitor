@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { SystemStatus, SystemSettings, HeartbeatLog, AlertLog } from './types';
-import { DEFAULT_SETTINGS, STORAGE_KEYS } from './constants';
-import DashboardHeader from './components/DashboardHeader';
-import SettingsPanel from './components/SettingsPanel';
-import ArchitectureDiagram from './components/ArchitectureDiagram';
-import GuidePanel from './components/GuidePanel';
+import { SystemStatus, SystemSettings, HeartbeatLog, AlertLog } from './types.ts';
+import { DEFAULT_SETTINGS, STORAGE_KEYS } from './constants.ts';
+import DashboardHeader from './components/DashboardHeader.tsx';
+import SettingsPanel from './components/SettingsPanel.tsx';
+import ArchitectureDiagram from './components/ArchitectureDiagram.tsx';
+import GuidePanel from './components/GuidePanel.tsx';
 
 const App: React.FC = () => {
   const [settings, setSettings] = useState<SystemSettings>(() => {
@@ -33,7 +33,6 @@ const App: React.FC = () => {
   const [isPinging, setIsPinging] = useState(false);
   const [pingStatus, setPingStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [serverFeedback, setServerFeedback] = useState<string | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
@@ -48,165 +47,128 @@ const App: React.FC = () => {
   };
 
   const testServerConnection = async () => {
-    console.log("🛠 TEST START: Verbinding maken met /api/heartbeat");
+    if (isPinging) return;
+    
+    console.log("🚀 START VERBINDINGSTEST");
     setIsPinging(true);
     setPingStatus('idle');
     setServerFeedback(null);
-    
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-        console.warn("⚠️ TIMEOUT: Server reageert niet binnen 8s");
-        controller.abort();
-    }, 8000);
+
+    // Harde reset na 10 seconden, ongeacht wat fetch doet
+    const hardResetTimeout = setTimeout(() => {
+      console.error("🛑 HARDE RESET: Knop draaide te lang, forceer stop.");
+      setIsPinging(false);
+      setPingStatus('error');
+      setServerFeedback("Fout: Server reageert helemaal niet.");
+    }, 10000);
 
     try {
-      const response = await fetch('/api/heartbeat', { 
+      // Gebruik absolute URL om verwarring in preview environments te voorkomen
+      const apiUrl = `${window.location.origin}/api/heartbeat`;
+      console.log("🔗 Verbinding maken met:", apiUrl);
+
+      const response = await fetch(apiUrl, { 
         method: 'POST',
         headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         body: JSON.stringify({ 
           source: 'Manual Test',
-          timestamp: Date.now()
-        }),
-        signal: controller.signal
+          browser: navigator.userAgent.substring(0, 50)
+        })
       });
       
-      console.log("📡 RESPONSE STATUS:", response.status);
-      clearTimeout(timeoutId);
+      console.log("📡 Status ontvangen:", response.status);
       
       const text = await response.text();
-      console.log("📝 RAW RESPONSE:", text.substring(0, 100));
+      console.log("📝 Server antwoord (raw):", text);
 
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        console.error("❌ JSON PARSE FOUT:", e);
-        throw new Error("Ongeldig antwoord van server");
-      }
-      
       if (response.ok) {
-        console.log("✅ SUCCES: Server bevestigd");
-        setPingStatus('success');
-        setServerFeedback(`Server bevestigd om: ${data.serverTime || 'Onbekende tijd'}`);
-        const newLog: HeartbeatLog = {
-          id: Date.now().toString(),
-          timestamp: Date.now(),
-          source: 'Browser Test'
-        };
-        setHeartbeats(prev => [newLog, ...prev.slice(0, 14)]);
+        let data;
+        try {
+          data = JSON.parse(text);
+          setPingStatus('success');
+          setServerFeedback(`GELUKT! Server tijd: ${data.serverTime}`);
+          
+          const newLog: HeartbeatLog = {
+            id: Date.now().toString(),
+            timestamp: Date.now(),
+            source: 'Browser Test'
+          };
+          setHeartbeats(prev => [newLog, ...prev.slice(0, 14)]);
+        } catch (parseError) {
+          console.error("❌ Kan JSON niet lezen:", text);
+          setPingStatus('error');
+          setServerFeedback("Fout: Server stuurde geen geldige JSON");
+        }
       } else {
         setPingStatus('error');
-        setServerFeedback(`Fout: Server gaf code ${response.status}`);
+        setServerFeedback(`Server Fout: ${response.status}`);
       }
-    } catch (e: any) {
-      console.error("🚨 FETCH EXCEPTION:", e);
+    } catch (err: any) {
+      console.error("🚨 Netwerkfout:", err);
       setPingStatus('error');
-      if (e.name === 'AbortError') {
-        setServerFeedback("Fout: Server timeout (geen antwoord)");
-      } else {
-        setServerFeedback(`Fout: ${e.message || "Netwerkfout"}`);
-      }
+      setServerFeedback(`Verbindingsfout: ${err.message || 'Onbekend'}`);
     } finally {
-      console.log("🏁 TEST EINDE");
+      clearTimeout(hardResetTimeout);
       setIsPinging(false);
-      clearTimeout(timeoutId);
+      console.log("🏁 TEST AFGEROND");
     }
   };
 
-  const syncCloudStatus = useCallback(async () => {
-    setIsSyncing(true);
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-      await fetch('/api/heartbeat', { signal: controller.signal });
-      clearTimeout(timeoutId);
-    } catch (e) {
-      // Background sync failures are silent
-    } finally {
-      setTimeout(() => setIsSyncing(false), 1000);
-    }
-  }, []);
-
   return (
-    <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-6 safe-padding text-slate-900 bg-[#f8fafc]">
+    <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-6 safe-padding text-slate-900">
       <DashboardHeader 
         status={SystemStatus.ACTIVE} 
         lastHeartbeat={heartbeats[0]?.timestamp || null} 
       />
 
-      <div className="bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className={`w-3 h-3 rounded-full ${isSyncing ? 'bg-indigo-500 animate-ping' : 'bg-emerald-500'}`}></div>
-          <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Status: Luisteren</p>
-            <p className="text-xs font-bold text-slate-700">Wachtend op signalen van je telefoon...</p>
-          </div>
-        </div>
-        <div className="flex gap-4">
-          <button 
-            onClick={syncCloudStatus}
-            disabled={isSyncing}
-            className="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-700 flex items-center gap-2"
-          >
-            <i className={`fas fa-sync-alt ${isSyncing ? 'animate-spin' : ''}`}></i> Sync
-          </button>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-8 space-y-6">
-          <section className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/50 rounded-full -mr-32 -mt-32 blur-3xl"></div>
-            
-            <div className="relative z-10">
-              <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
-                <div>
-                  <h2 className="text-2xl font-black italic tracking-tighter text-slate-900">VERBINDINGSTEST</h2>
-                  <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest mt-1">Dwing een log-vermelding af</p>
-                </div>
-                <a 
-                  href="https://vercel.com/aldohuizinga-gmailcoms-projects/welzijn-monitor/logs" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg flex items-center gap-2"
+          <section className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
+              <div>
+                <h2 className="text-2xl font-black italic tracking-tighter">VERBINDINGSTEST</h2>
+                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest mt-1">Controleer de Cloud verbinding</p>
+              </div>
+              <button 
+                onClick={() => window.open('https://vercel.com/aldohuizinga-gmailcoms-projects/welzijn-monitor/logs', '_blank')}
+                className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"
+              >
+                <i className="fas fa-terminal"></i> OPEN LIVE LOGS
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-6 bg-slate-50 border border-slate-200 rounded-3xl">
+                <p className="text-[11px] text-slate-600 mb-6 leading-relaxed">
+                  Druk op de knop om te zien of je browser contact kan maken met de Vercel API.
+                </p>
+                <button 
+                  onClick={testServerConnection}
+                  disabled={isPinging}
+                  className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-sm ${
+                    pingStatus === 'success' ? 'bg-emerald-500 text-white' : 
+                    pingStatus === 'error' ? 'bg-rose-500 text-white' :
+                    'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95'
+                  }`}
                 >
-                  <i className="fas fa-terminal"></i> OPEN LIVE LOGS
-                </a>
+                  {isPinging ? <i className="fas fa-spinner animate-spin"></i> : <i className="fas fa-bolt"></i>}
+                  {isPinging ? 'VERZENDEN...' : pingStatus === 'success' ? 'CLOUD BEREIKT!' : pingStatus === 'error' ? 'FOUT - OPNIEUW' : 'STUUR TEST-SIGNAAL'}
+                </button>
+                {serverFeedback && (
+                  <p className={`mt-3 text-[10px] font-bold text-center ${pingStatus === 'error' ? 'text-rose-600' : 'text-emerald-600'}`}>
+                    {serverFeedback}
+                  </p>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-6 bg-slate-50 border border-slate-200 rounded-3xl">
-                  <p className="text-[11px] text-slate-600 mb-6 leading-relaxed">
-                    Klik op de knop. Als deze blijft draaien, check dan de <b>browser console (F12)</b> voor fouten.
-                  </p>
-                  <button 
-                    onClick={testServerConnection}
-                    disabled={isPinging}
-                    className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-sm ${
-                      pingStatus === 'success' ? 'bg-emerald-500 text-white' : 
-                      pingStatus === 'error' ? 'bg-rose-500 text-white' :
-                      'bg-indigo-100 text-indigo-600 hover:bg-indigo-200 active:scale-95'
-                    }`}
-                  >
-                    {isPinging ? <i className="fas fa-spinner animate-spin"></i> : <i className="fas fa-bolt"></i>}
-                    {isPinging ? 'VERZENDEN...' : pingStatus === 'success' ? 'CLOUD ONTVANGEN!' : pingStatus === 'error' ? 'FOUT - OPNIEUW' : 'STUUR TEST-SIGNAAL'}
-                  </button>
-                  {serverFeedback && (
-                    <p className={`mt-3 text-[10px] font-bold text-center ${pingStatus === 'error' ? 'text-rose-600' : 'text-emerald-600'}`}>
-                      {serverFeedback}
-                    </p>
-                  )}
-                </div>
-
-                <div className="p-6 bg-amber-50 border border-amber-100 rounded-3xl">
-                  <h4 className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-4">LOGS NIET ZICHTBAAR?</h4>
-                  <p className="text-[11px] text-amber-800/80 leading-relaxed">
-                    Zorg dat je op de knop "OPEN LIVE LOGS" hebt geklikt en dat er geen filters in de Vercel zoekbalk staan.
-                  </p>
-                </div>
+              <div className="p-6 bg-amber-50 border border-amber-100 rounded-3xl">
+                <h4 className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-4">LOGS NIET ZICHTBAAR?</h4>
+                <p className="text-[11px] text-amber-800/80 leading-relaxed">
+                  Als de knop groen wordt maar de logs zijn leeg, check dan of je in het juiste Vercel project kijkt en of er geen filters aan staan.
+                </p>
               </div>
             </div>
           </section>
