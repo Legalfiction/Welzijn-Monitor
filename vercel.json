@@ -6,7 +6,7 @@
     }
   },
   "rewrites": [
-    { "source": "/api/heartbeat", "destination": "/api/heartbeat.ts" },
+    { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

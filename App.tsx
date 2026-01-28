@@ -43,43 +43,29 @@ const App: React.FC = () => {
     localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(heartbeats));
   }, [heartbeats]);
 
-  const syncCloudStatus = useCallback(async () => {
-    setIsSyncing(true);
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-      await fetch('/api/heartbeat', { signal: controller.signal });
-      clearTimeout(timeoutId);
-    } catch (e) {
-      console.warn("Sync background check failed (non-critical)");
-    } finally {
-      setTimeout(() => setIsSyncing(false), 1000);
-    }
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(syncCloudStatus, 60000); // Minder frequent om overhead te beperken
-    return () => clearInterval(interval);
-  }, [syncCloudStatus]);
-
   const handleUpdateSettings = (newSettings: SystemSettings) => {
     setSettings(newSettings);
   };
 
   const testServerConnection = async () => {
+    console.log("🛠 TEST START: Verbinding maken met /api/heartbeat");
     setIsPinging(true);
     setPingStatus('idle');
     setServerFeedback(null);
     
-    // Timeout van 8 seconden toevoegen om 'oneindig draaien' te voorkomen
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const timeoutId = setTimeout(() => {
+        console.warn("⚠️ TIMEOUT: Server reageert niet binnen 8s");
+        controller.abort();
+    }, 8000);
 
     try {
-      console.log("🚀 Start testServerConnection...");
       const response = await fetch('/api/heartbeat', { 
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
         body: JSON.stringify({ 
           source: 'Manual Test',
           timestamp: Date.now()
@@ -87,10 +73,22 @@ const App: React.FC = () => {
         signal: controller.signal
       });
       
+      console.log("📡 RESPONSE STATUS:", response.status);
       clearTimeout(timeoutId);
       
+      const text = await response.text();
+      console.log("📝 RAW RESPONSE:", text.substring(0, 100));
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error("❌ JSON PARSE FOUT:", e);
+        throw new Error("Ongeldig antwoord van server");
+      }
+      
       if (response.ok) {
-        const data = await response.json();
+        console.log("✅ SUCCES: Server bevestigd");
         setPingStatus('success');
         setServerFeedback(`Server bevestigd om: ${data.serverTime || 'Onbekende tijd'}`);
         const newLog: HeartbeatLog = {
@@ -100,23 +98,37 @@ const App: React.FC = () => {
         };
         setHeartbeats(prev => [newLog, ...prev.slice(0, 14)]);
       } else {
-        console.error("Server error response:", response.status);
         setPingStatus('error');
         setServerFeedback(`Fout: Server gaf code ${response.status}`);
       }
     } catch (e: any) {
-      console.error("Fetch error details:", e);
+      console.error("🚨 FETCH EXCEPTION:", e);
       setPingStatus('error');
       if (e.name === 'AbortError') {
         setServerFeedback("Fout: Server timeout (geen antwoord)");
       } else {
-        setServerFeedback("Fout: Kon geen verbinding maken");
+        setServerFeedback(`Fout: ${e.message || "Netwerkfout"}`);
       }
     } finally {
+      console.log("🏁 TEST EINDE");
       setIsPinging(false);
       clearTimeout(timeoutId);
     }
   };
+
+  const syncCloudStatus = useCallback(async () => {
+    setIsSyncing(true);
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      await fetch('/api/heartbeat', { signal: controller.signal });
+      clearTimeout(timeoutId);
+    } catch (e) {
+      // Background sync failures are silent
+    } finally {
+      setTimeout(() => setIsSyncing(false), 1000);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-6 safe-padding text-slate-900 bg-[#f8fafc]">
@@ -134,9 +146,6 @@ const App: React.FC = () => {
           </div>
         </div>
         <div className="flex gap-4">
-          <p className="text-[9px] text-slate-400 max-w-[200px] text-right leading-tight hidden md:block">
-            Let op: Het openen van deze app logt niets. Ontgrendel je telefoon of gebruik de testknop.
-          </p>
           <button 
             onClick={syncCloudStatus}
             disabled={isSyncing}
@@ -164,14 +173,14 @@ const App: React.FC = () => {
                   rel="noopener noreferrer"
                   className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg flex items-center gap-2"
                 >
-                  <i className="fas fa-terminal"></i> OPEN MIJN LIVE PROJECT LOGS
+                  <i className="fas fa-terminal"></i> OPEN LIVE LOGS
                 </a>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="p-6 bg-slate-50 border border-slate-200 rounded-3xl">
                   <p className="text-[11px] text-slate-600 mb-6 leading-relaxed">
-                    Klik hieronder. Als de knop groen wordt, <b>moet</b> er een melding met sterren in de Vercel Logs verschijnen.
+                    Klik op de knop. Als deze blijft draaien, check dan de <b>browser console (F12)</b> voor fouten.
                   </p>
                   <button 
                     onClick={testServerConnection}
@@ -183,24 +192,20 @@ const App: React.FC = () => {
                     }`}
                   >
                     {isPinging ? <i className="fas fa-spinner animate-spin"></i> : <i className="fas fa-bolt"></i>}
-                    {isPinging ? 'VERZENDEN...' : pingStatus === 'success' ? 'CLOUD ONTVANGEN!' : pingStatus === 'error' ? 'OPNIEUW PROBEREN' : 'STUUR TEST-SIGNAAL'}
+                    {isPinging ? 'VERZENDEN...' : pingStatus === 'success' ? 'CLOUD ONTVANGEN!' : pingStatus === 'error' ? 'FOUT - OPNIEUW' : 'STUUR TEST-SIGNAAL'}
                   </button>
                   {serverFeedback && (
-                    <p className={`mt-3 text-[10px] font-bold text-center animate-pulse ${pingStatus === 'error' ? 'text-rose-600' : 'text-emerald-600'}`}>
+                    <p className={`mt-3 text-[10px] font-bold text-center ${pingStatus === 'error' ? 'text-rose-600' : 'text-emerald-600'}`}>
                       {serverFeedback}
                     </p>
                   )}
                 </div>
 
                 <div className="p-6 bg-amber-50 border border-amber-100 rounded-3xl">
-                  <h4 className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-4">BELANGRIJK: VERCEL LOGS</h4>
-                  <p className="text-[11px] text-amber-800/80 leading-relaxed mb-4">
-                    Vercel filtert logs vaak op de "huidige deployment". Als je een verandering in de code hebt gemaakt, zie je in de oude tab geen nieuwe logs.
+                  <h4 className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-4">LOGS NIET ZICHTBAAR?</h4>
+                  <p className="text-[11px] text-amber-800/80 leading-relaxed">
+                    Zorg dat je op de knop "OPEN LIVE LOGS" hebt geklikt en dat er geen filters in de Vercel zoekbalk staan.
                   </p>
-                  <div className="flex items-center gap-2 text-[10px] font-bold text-amber-900">
-                    <i className="fas fa-info-circle"></i>
-                    <span>Klik op de knop bovenaan voor de actieve log-view!</span>
-                  </div>
                 </div>
               </div>
             </div>
