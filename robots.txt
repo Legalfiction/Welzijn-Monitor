@@ -1,0 +1,4 @@
+
+User-agent: *
+Disallow: /api/
+Sitemap: https://welzijn-monitor-5y2ykv6f9-aldohuizinga-gmailcoms-projects.vercel.app/sitemap.xml

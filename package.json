@@ -1,10 +1,25 @@
-
 {
   "name": "welzijn-monitor",
-  "version": "1.0.0",
-  "description": "GuardianSwitch Welzijnsmonitor",
+  "version": "1.2.4",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
   "dependencies": {
-    "@google/genai": "^1.38.0",
-    "@vercel/node": "^5.5.28"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@google/genai": "^0.22.0",
+    "resend": "^3.5.0"
+  },
+  "devDependencies": {
+    "vite": "^6.0.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.2",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/node": "^20.11.0",
+    "@vercel/node": "^3.0.0"
   }
 }
