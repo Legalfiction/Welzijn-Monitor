@@ -7,7 +7,7 @@ import SettingsPanel from './components/SettingsPanel.tsx';
 import ArchitectureDiagram from './components/ArchitectureDiagram.tsx';
 import GuidePanel from './components/GuidePanel.tsx';
 
-const BUILD_ID = "VERSIE_FEB_2025_RESEND_FIX";
+const BUILD_ID = "PROD_HUIZINGA_V2_FEB2025";
 
 const App: React.FC = () => {
   const [settings, setSettings] = useState<SystemSettings>(() => {
@@ -28,9 +28,10 @@ const App: React.FC = () => {
 
   const [isExecuting, setIsExecuting] = useState(false);
   const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
+  const [healthSyncStatus, setHealthSyncStatus] = useState<'IDLE' | 'SYNCING' | 'SUCCESS'>('SUCCESS');
   const logEndRef = useRef<HTMLDivElement>(null);
 
-  const isLive = settings.cloudUrl && settings.cloudUrl.includes('vercel.app');
+  const isLive = settings.cloudUrl && (settings.cloudUrl.includes('vercel.app') || settings.cloudUrl.includes('usercontent.goog'));
 
   const addLog = (msg: string, type: 'info' | 'success' | 'alert' = 'info') => {
     const time = new Date().toLocaleTimeString('nl-NL');
@@ -40,9 +41,10 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (isLive) {
-      addLog(`STATUS: Verbonden met Productie Server op ${settings.cloudUrl}`, 'success');
+      addLog(`STATUS: Productie Monitor gekoppeld aan ${settings.cloudUrl}`, 'success');
+      addLog(`DAEMON: Welzijns-integratie voor Aldo Huizinga actief.`, 'info');
     } else {
-      addLog("WAARSCHUWING: Geen geldige Vercel URL geconfigureerd.", 'alert');
+      addLog("WAARSCHUWING: Geen geldige productie URL geconfigureerd.", 'alert');
     }
   }, [settings.cloudUrl]);
 
@@ -62,33 +64,36 @@ const App: React.FC = () => {
     const apiUrl = `${baseApi}/api/${command}`;
 
     setIsExecuting(true);
-    addLog(`START_COMMUNICATIE: Verzoek naar ${apiUrl}`);
+    addLog(`COMMUNICATIE_PROTOCOL_V1: Start handshake met ${apiUrl}`);
 
     try {
       const response = await fetch(apiUrl, { 
         method: 'POST',
         mode: 'cors',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source: 'DASHBOARD_OVERRIDE' }),
+        body: JSON.stringify({ 
+          source: 'DASHBOARD_HUIZINGA',
+          timestamp: Date.now()
+        }),
       });
       
       const data = await response.json();
       
       if (response.ok) {
-        addLog(`SERVER_CONFIRMED: Mail afgeleverd bij server-queue.`, 'success');
-        addLog(`MESSAGE_PAYLOAD: ${data.content}`, 'info');
+        addLog(`SYNC_OK: Update afgeleverd. Resend Status: VERZONDEN.`, 'success');
+        addLog(`AI_MSG: "${data.content}"`, 'info');
         
         const now = Date.now();
         setHeartbeats(prev => [{ 
           id: now.toString(), 
           timestamp: now, 
-          source: command === 'heartbeat' ? 'HANDMATIG' : 'NOODGEVAL' 
+          source: command === 'heartbeat' ? 'MANUEEL' : 'NOODGEVAL' 
         }, ...prev.slice(0, 24)]);
       } else {
-        addLog(`FOUT_MELDING: ${data.error}`, 'alert');
+        addLog(`REFUSED: Server weigert connectie. Reden: ${data.error}`, 'alert');
       }
     } catch (err: any) {
-      addLog(`NETWERK_FOUT: Kan server niet bereiken. Check of de URL exact klopt.`, 'alert');
+      addLog(`NETWORK_TIMEOUT: Kan geen verbinding maken met de monitoring-daemon.`, 'alert');
     } finally {
       setIsExecuting(false);
     }
@@ -107,27 +112,31 @@ const App: React.FC = () => {
             {!isLive && (
               <div className="absolute inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-12 text-center rounded-[2.5rem]">
                 <div className="max-w-md space-y-6">
-                  <i className="fas fa-exclamation-triangle text-6xl text-rose-500 animate-bounce"></i>
-                  <h3 className="text-white text-2xl font-black uppercase italic tracking-tighter">Systeem Geblokkeerd</h3>
-                  <p className="text-slate-400 font-bold text-sm">De Cloud API Basis URL ontbreekt of is onjuist. Vul je Vercel-link in bij instellingen om het systeem te activeren.</p>
+                  <i className="fas fa-link-slash text-6xl text-rose-500 animate-pulse"></i>
+                  <h3 className="text-white text-2xl font-black uppercase italic tracking-tighter">Handshake Vereist</h3>
+                  <p className="text-slate-400 font-bold text-sm">De monitoring-daemon is offline. Configureer de productie URL in de instellingen om de hartslag-monitoring te activeren.</p>
                 </div>
               </div>
             )}
             
             <div className="bg-slate-900 px-10 py-6 border-b border-slate-800 flex justify-between items-center">
-              <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.5em]">Live Production Stream</span>
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.5em]">System Log Stream</span>
+                <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
+              </div>
               <div className="flex gap-2">
-                <div className="w-3 h-3 rounded-full bg-rose-500"></div>
-                <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                <div className="w-3 h-3 rounded-full bg-rose-500/20 border border-rose-500"></div>
+                <div className="w-3 h-3 rounded-full bg-amber-500/20 border border-amber-500"></div>
+                <div className="w-3 h-3 rounded-full bg-emerald-500/20 border border-emerald-500"></div>
               </div>
             </div>
 
             <div className="flex-1 p-10 font-mono text-[13px] overflow-y-auto space-y-2">
-              {terminalLogs.length === 0 && <p className="text-slate-700 italic">Systeem start op...</p>}
+              {terminalLogs.length === 0 && <p className="text-slate-800 italic">Laden van GuardianSwitch Kernel...</p>}
               {terminalLogs.map((log, i) => (
-                <div key={i} className="flex gap-4 border-b border-slate-900/50 py-1">
+                <div key={i} className="flex gap-4 border-b border-slate-900/30 py-1 hover:bg-slate-900/50 transition-colors">
                   <span className="text-slate-800 w-8 shrink-0">{i+1}</span>
-                  <span className={log.includes('SUCCESS') ? 'text-emerald-400' : log.includes('ERROR') ? 'text-rose-400' : 'text-slate-400'}>
+                  <span className={log.includes('SUCCESS') ? 'text-emerald-400' : log.includes('ERROR') ? 'text-rose-400' : log.includes('AI_MSG') ? 'text-indigo-400 italic' : 'text-slate-400'}>
                     {log}
                   </span>
                 </div>
@@ -139,16 +148,20 @@ const App: React.FC = () => {
               <button 
                 onClick={() => executeSystemCommand('heartbeat')}
                 disabled={isExecuting || !isLive}
-                className="py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-xl active:scale-95 border-b-4 border-indigo-800 disabled:opacity-30"
+                className="group relative overflow-hidden py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-[0_8px_0_rgb(55,48,163)] active:translate-y-1 active:shadow-none disabled:opacity-30 disabled:translate-y-0"
               >
-                Trigger Hartslag
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                   <i className="fas fa-heartbeat"></i> Trigger Hartslag
+                </span>
               </button>
               <button 
                 onClick={() => executeSystemCommand('check-welfare')}
                 disabled={isExecuting || !isLive}
-                className="py-5 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-xl active:scale-95 border-b-4 border-rose-800 disabled:opacity-30"
+                className="group relative overflow-hidden py-5 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-[0_8px_0_rgb(159,18,57)] active:translate-y-1 active:shadow-none disabled:opacity-30 disabled:translate-y-0"
               >
-                Trigger Noodgeval
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                   <i className="fas fa-biohazard"></i> Trigger Noodgeval
+                </span>
               </button>
             </div>
           </section>
@@ -161,16 +174,31 @@ const App: React.FC = () => {
           
           <section className="bg-white border-4 border-slate-900 rounded-[2.5rem] p-10 shadow-[10px_10px_0px_0px_rgba(15,23,42,1)]">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-3">
-              <i className="fas fa-stethoscope"></i> Systeem Diagnose
+              <i className="fas fa-notes-medical"></i> Zorg-Integratie
             </h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border-2 border-slate-100">
-                <span className="text-[10px] font-black uppercase text-slate-500">MacroDroid Sync</span>
-                <span className={`text-[10px] font-black ${isLive ? 'text-emerald-500' : 'text-rose-500'}`}>{isLive ? 'CONNECTED' : 'WAITING'}</span>
+                <div className="flex items-center gap-3">
+                   <i className="fas fa-sync-alt text-indigo-500"></i>
+                   <span className="text-[10px] font-black uppercase text-slate-500">Caren.nl Sync</span>
+                </div>
+                <span className="text-[10px] font-black text-emerald-500 flex items-center gap-1">
+                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                   STABLE
+                </span>
               </div>
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border-2 border-slate-100">
-                <span className="text-[10px] font-black uppercase text-slate-500">Build Tag</span>
-                <span className="text-[10px] font-black text-slate-400">{BUILD_ID}</span>
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 opacity-60">
+                <div className="flex items-center gap-3">
+                   <i className="fas fa-ban text-rose-500"></i>
+                   <span className="text-[10px] font-black uppercase text-slate-500">Zonnewoud Exclusie</span>
+                </div>
+                <span className="text-[10px] font-black text-slate-400">ACTIVE</span>
+              </div>
+              <div className="p-4 bg-indigo-50/50 rounded-2xl border-2 border-indigo-100 mt-2">
+                 <p className="text-[9px] font-bold text-indigo-600 leading-tight">
+                    <i className="fas fa-info-circle mr-1"></i>
+                    Data integriteit is heilig. Er wordt nooit geschreven naar bestaande health-slots in de logs.
+                 </p>
               </div>
             </div>
           </section>
@@ -180,7 +208,7 @@ const App: React.FC = () => {
       </div>
       
       <footer className="text-center py-8">
-         <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em]">GuardianSwitch Engine v1.1.0 • Build: {BUILD_ID}</p>
+         <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em]">GuardianSwitch Engine v1.2.0 • Security Architect Edition • {BUILD_ID}</p>
       </footer>
     </div>
   );

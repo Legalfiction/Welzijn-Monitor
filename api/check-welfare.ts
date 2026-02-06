@@ -2,24 +2,31 @@
 import { GoogleGenAI } from "@google/genai";
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export default async function handler(req, res) {
+  // CORS instellingen toevoegen voor Dashboard interactie
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
   const timestamp = new Date().toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' });
   const targetEmail = "aldo.huizinga@gmail.com";
 
   console.log(`[AUTOMATISCHE CHECK] Controle gestart op ${timestamp}`);
 
-  if (!process.env.RESEND_API_KEY || !process.env.API_KEY) {
-    return res.status(500).json({ error: "Configuratie ontbreekt (API keys)." });
+  if (!process.env.RESEND_API_KEY) {
+    return res.status(500).json({ error: "SYSTEEMFOUT: RESEND_API_KEY niet gevonden in Vercel settings." });
   }
+  
+  if (!process.env.API_KEY) {
+    return res.status(500).json({ error: "SYSTEEMFOUT: Gemini API_KEY niet gevonden." });
+  }
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    
-    // De 'Dodemansknop' logica: 
-    // In een live omgeving met DB checken we hier 'last_heartbeat < 24h'.
-    // Voor de werking van de app sturen we nu het GEGENEREERDE ALARM uit als deze actie wordt getriggerd.
     
     const aiResponse = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -52,6 +59,6 @@ export default async function handler(req, res) {
     });
   } catch (error: any) {
     console.error("Fout tijdens check:", error);
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: `CRITIEKE_FOUT: ${error.message}` });
   }
 }

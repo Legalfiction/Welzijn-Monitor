@@ -1,3 +1,4 @@
+
 import { SystemSettings } from './types';
 
 export const DEFAULT_SETTINGS: SystemSettings = {
@@ -10,11 +11,12 @@ export const DEFAULT_SETTINGS: SystemSettings = {
     }
   ],
   alertMessageTemplate: "GuardianSwitch Alert: Onmiddellijke welzijnscheck vereist voor Aldo Huizinga.",
-  cloudUrl: 'https://welzijn-monitor.vercel.app', 
+  // Updated with the user-provided production URL base
+  cloudUrl: 'https://48dyecg3g71mao37dp2e4bm7dkjswdrp42ozwrfgra4ln60bwd-h864888888.scf.usercontent.goog', 
 };
 
 export const STORAGE_KEYS = {
-  SETTINGS: 'gs_settings_v15_stable', 
-  LOGS: 'gs_logs_v15_stable',
-  ALERTS: 'gs_alerts_v15_stable'
+  SETTINGS: 'gs_settings_v16_prod', 
+  LOGS: 'gs_logs_v16_prod',
+  ALERTS: 'gs_alerts_v16_prod'
 };
