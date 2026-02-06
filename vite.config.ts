@@ -5,18 +5,13 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   define: {
-    // This allows process.env.API_KEY to be accessible in the client code without breaking the build
-    'process.env': process.env
+    'process.env.API_KEY': JSON.stringify(process.env.API_KEY),
+    'process.env.RESEND_API_KEY': JSON.stringify(process.env.RESEND_API_KEY)
   },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    target: 'esnext',
-    rollupOptions: {
-      input: {
-        main: './index.html'
-      }
-    }
+    target: 'esnext'
   },
   server: {
     port: 3000,
