@@ -11,6 +11,11 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     target: 'esnext',
-    minify: 'esbuild'
+    minify: 'esbuild',
+    sourcemap: false
+  },
+  server: {
+    port: 3000,
+    strictPort: true
   }
 });
