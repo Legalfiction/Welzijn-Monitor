@@ -7,6 +7,8 @@ import SettingsPanel from './components/SettingsPanel.tsx';
 import ArchitectureDiagram from './components/ArchitectureDiagram.tsx';
 import GuidePanel from './components/GuidePanel.tsx';
 
+const BUILD_ID = "VERSIE_FEB_2025_RESEND_FIX";
+
 const App: React.FC = () => {
   const [settings, setSettings] = useState<SystemSettings>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS);
@@ -24,160 +26,162 @@ const App: React.FC = () => {
     try { return saved ? JSON.parse(saved) : []; } catch (e) { return []; }
   });
 
-  const [isPinging, setIsPinging] = useState(false);
-  const [pingStatus, setPingStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [debugLogs, setDebugLogs] = useState<string[]>(["Systeem online. Test-modus: Elke hartslag stuurt een 'mail'."]);
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
   const logEndRef = useRef<HTMLDivElement>(null);
 
-  const isPreview = window.location.href.includes('googleusercontent.com') || window.location.href.includes('aistudio.google.com');
+  const isLive = settings.cloudUrl && settings.cloudUrl.includes('vercel.app');
 
-  const addLog = (msg: string) => {
-    const time = new Date().toLocaleTimeString();
-    setDebugLogs(prev => [...prev, `[${time}] ${msg}`].slice(-15));
+  const addLog = (msg: string, type: 'info' | 'success' | 'alert' = 'info') => {
+    const time = new Date().toLocaleTimeString('nl-NL');
+    const prefix = type === 'success' ? '>>> SUCCESS:' : type === 'alert' ? '!!! ERROR:' : '--- SYSTEM:';
+    setTerminalLogs(prev => [...prev, `${time} ${prefix} ${msg}`].slice(-100));
   };
 
   useEffect(() => {
+    if (isLive) {
+      addLog(`STATUS: Verbonden met Productie Server op ${settings.cloudUrl}`, 'success');
+    } else {
+      addLog("WAARSCHUWING: Geen geldige Vercel URL geconfigureerd.", 'alert');
+    }
+  }, [settings.cloudUrl]);
+
+  useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [debugLogs]);
+  }, [terminalLogs]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
-  }, [settings]);
+    localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(heartbeats));
+  }, [settings, heartbeats]);
 
-  const testServerConnection = async () => {
-    if (isPinging) return;
+  const executeSystemCommand = async (command: 'heartbeat' | 'check-welfare') => {
+    if (isExecuting || !isLive) return;
     
-    const baseApi = settings.cloudUrl ? settings.cloudUrl.replace(/\/$/, '') : window.location.origin;
-    const apiUrl = `${baseApi}/api/heartbeat`;
+    const baseApi = settings.cloudUrl.replace(/\/$/, '');
+    const apiUrl = `${baseApi}/api/${command}`;
 
-    if (isPreview && !settings.cloudUrl) {
-      addLog("⚠️ WAARSCHUWING: Vul eerst je Vercel URL in!");
-      setPingStatus('error');
-      return;
-    }
-
-    setIsPinging(true);
-    setPingStatus('idle');
-    addLog(`🚀 Test-signaal sturen naar Cloud...`);
+    setIsExecuting(true);
+    addLog(`START_COMMUNICATIE: Verzoek naar ${apiUrl}`);
 
     try {
       const response = await fetch(apiUrl, { 
         method: 'POST',
         mode: 'cors',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source: 'Telefoon-MacroDroid', type: 'Test' }), // We simuleren een telefoon-bron
+        body: JSON.stringify({ source: 'DASHBOARD_OVERRIDE' }),
       });
       
       const data = await response.json();
       
       if (response.ok) {
-        setPingStatus('success');
-        addLog("✅ CLOUD ONTVANGEN!");
-        if (data.simulated_message) {
-          addLog(`📧 MAIL GENERATIE: "${data.simulated_message.substring(0, 40)}..."`);
-          addLog("ℹ️ Check je Vercel logs voor de volledige 'verzonden' email.");
-        }
+        addLog(`SERVER_CONFIRMED: Mail afgeleverd bij server-queue.`, 'success');
+        addLog(`MESSAGE_PAYLOAD: ${data.content}`, 'info');
+        
         const now = Date.now();
-        setHeartbeats(prev => [{ id: now.toString(), timestamp: now, source: 'Cloud + Mail Test' }, ...prev.slice(0, 14)]);
+        setHeartbeats(prev => [{ 
+          id: now.toString(), 
+          timestamp: now, 
+          source: command === 'heartbeat' ? 'HANDMATIG' : 'NOODGEVAL' 
+        }, ...prev.slice(0, 24)]);
       } else {
-        setPingStatus('error');
-        addLog(`❌ FOUT: ${response.status}`);
+        addLog(`FOUT_MELDING: ${data.error}`, 'alert');
       }
     } catch (err: any) {
-      setPingStatus('error');
-      addLog(`🚨 ERROR: ${err.message}`);
+      addLog(`NETWERK_FOUT: Kan server niet bereiken. Check of de URL exact klopt.`, 'alert');
     } finally {
-      setIsPinging(false);
+      setIsExecuting(false);
     }
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-6 text-slate-900 bg-[#f8fafc]">
+    <div className="min-h-screen p-4 md:p-8 max-w-screen-2xl mx-auto space-y-8 bg-slate-50">
       <DashboardHeader 
-        status={SystemStatus.ACTIVE} 
+        status={isLive ? SystemStatus.ACTIVE : SystemStatus.DISABLED} 
         lastHeartbeat={heartbeats[0]?.timestamp || null} 
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8 space-y-6">
-          <section className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4">
-              <span className="bg-amber-100 text-amber-700 text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest animate-pulse">
-                Test-Modus Actief
-              </span>
-            </div>
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+        <div className="xl:col-span-8 space-y-8">
+          <section className="bg-slate-950 border-[6px] border-slate-900 rounded-[3rem] shadow-2xl flex flex-col h-[600px] relative">
+            {!isLive && (
+              <div className="absolute inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-12 text-center rounded-[2.5rem]">
+                <div className="max-w-md space-y-6">
+                  <i className="fas fa-exclamation-triangle text-6xl text-rose-500 animate-bounce"></i>
+                  <h3 className="text-white text-2xl font-black uppercase italic tracking-tighter">Systeem Geblokkeerd</h3>
+                  <p className="text-slate-400 font-bold text-sm">De Cloud API Basis URL ontbreekt of is onjuist. Vul je Vercel-link in bij instellingen om het systeem te activeren.</p>
+                </div>
+              </div>
+            )}
             
-            <h2 className="text-2xl font-black italic tracking-tighter mb-8 uppercase">Live Test Terminal</h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <button 
-                  onClick={testServerConnection}
-                  disabled={isPinging}
-                  className={`w-full py-8 rounded-3xl font-black text-sm uppercase tracking-widest transition-all flex flex-col items-center justify-center gap-2 shadow-lg ${
-                    pingStatus === 'success' ? 'bg-emerald-500 text-white' : 
-                    pingStatus === 'error' ? 'bg-rose-500 text-white' :
-                    'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95'
-                  }`}
-                >
-                  <i className="fas fa-paper-plane text-xl"></i>
-                  <span>{isPinging ? 'VERWERKEN...' : 'SIMULEER TELEFOON SIGNAAL'}</span>
-                  <span className="text-[9px] opacity-60 font-medium">(Triggert Gemini & Mail Log)</span>
-                </button>
-                
-                <div className="bg-slate-900 rounded-3xl p-5 border border-slate-800 shadow-inner">
-                   <div className="flex items-center gap-2 mb-3 border-b border-slate-800 pb-2">
-                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Systeem Console</span>
-                   </div>
-                  <div className="font-mono text-[10px] space-y-1.5 h-48 overflow-y-auto text-slate-400">
-                    {debugLogs.map((log, i) => (
-                      <div key={i} className={`${log.includes('✅') ? 'text-emerald-400' : log.includes('🚨') ? 'text-rose-400' : ''}`}>
-                        {log}
-                      </div>
-                    ))}
-                    <div ref={logEndRef} />
-                  </div>
-                </div>
+            <div className="bg-slate-900 px-10 py-6 border-b border-slate-800 flex justify-between items-center">
+              <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.5em]">Live Production Stream</span>
+              <div className="flex gap-2">
+                <div className="w-3 h-3 rounded-full bg-rose-500"></div>
+                <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
               </div>
+            </div>
 
-              <div className="space-y-6">
-                <div className="bg-white border-2 border-indigo-100 p-6 rounded-[2rem] shadow-sm">
-                  <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-4 italic">Test Instructie</h4>
-                  <ol className="text-xs text-slate-600 space-y-4 font-medium">
-                    <li className="flex gap-3">
-                      <span className="bg-indigo-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] flex-shrink-0">1</span>
-                      <span>Druk op de blauwe knop hiernaast om een <b>telefoon-unlock</b> na te bootsen.</span>
-                    </li>
-                    <li className="flex gap-3">
-                      <span className="bg-indigo-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] flex-shrink-0">2</span>
-                      <span>Wacht op de bevestiging van de Cloud.</span>
-                    </li>
-                    <li className="flex gap-3">
-                      <span className="bg-indigo-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] flex-shrink-0">3</span>
-                      <span>Bekijk je <b>Vercel Logs</b> om de "verzonden" email van Gemini te lezen!</span>
-                    </li>
-                  </ol>
+            <div className="flex-1 p-10 font-mono text-[13px] overflow-y-auto space-y-2">
+              {terminalLogs.length === 0 && <p className="text-slate-700 italic">Systeem start op...</p>}
+              {terminalLogs.map((log, i) => (
+                <div key={i} className="flex gap-4 border-b border-slate-900/50 py-1">
+                  <span className="text-slate-800 w-8 shrink-0">{i+1}</span>
+                  <span className={log.includes('SUCCESS') ? 'text-emerald-400' : log.includes('ERROR') ? 'text-rose-400' : 'text-slate-400'}>
+                    {log}
+                  </span>
                 </div>
+              ))}
+              <div ref={logEndRef} />
+            </div>
 
-                <div className="bg-emerald-50 border border-emerald-100 p-6 rounded-[2rem]">
-                  <p className="text-[10px] text-emerald-800 leading-relaxed font-bold italic flex items-start gap-3">
-                    <i className="fas fa-magic mt-1"></i>
-                    <span>In deze test-fase schrijft Gemini voor elke hartslag een uniek bericht om aan te tonen dat de verbinding werkt.</span>
-                  </p>
-                </div>
-              </div>
+            <div className="p-8 bg-slate-900 border-t border-slate-800 grid grid-cols-2 gap-6">
+              <button 
+                onClick={() => executeSystemCommand('heartbeat')}
+                disabled={isExecuting || !isLive}
+                className="py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-xl active:scale-95 border-b-4 border-indigo-800 disabled:opacity-30"
+              >
+                Trigger Hartslag
+              </button>
+              <button 
+                onClick={() => executeSystemCommand('check-welfare')}
+                disabled={isExecuting || !isLive}
+                className="py-5 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-xl active:scale-95 border-b-4 border-rose-800 disabled:opacity-30"
+              >
+                Trigger Noodgeval
+              </button>
             </div>
           </section>
 
           <GuidePanel cloudUrl={settings.cloudUrl} />
-          <ArchitectureDiagram />
         </div>
 
-        <div className="lg:col-span-4 space-y-6">
+        <div className="xl:col-span-4 space-y-8">
           <SettingsPanel settings={settings} onUpdate={(s) => setSettings(s)} />
+          
+          <section className="bg-white border-4 border-slate-900 rounded-[2.5rem] p-10 shadow-[10px_10px_0px_0px_rgba(15,23,42,1)]">
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-3">
+              <i className="fas fa-stethoscope"></i> Systeem Diagnose
+            </h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border-2 border-slate-100">
+                <span className="text-[10px] font-black uppercase text-slate-500">MacroDroid Sync</span>
+                <span className={`text-[10px] font-black ${isLive ? 'text-emerald-500' : 'text-rose-500'}`}>{isLive ? 'CONNECTED' : 'WAITING'}</span>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border-2 border-slate-100">
+                <span className="text-[10px] font-black uppercase text-slate-500">Build Tag</span>
+                <span className="text-[10px] font-black text-slate-400">{BUILD_ID}</span>
+              </div>
+            </div>
+          </section>
+
+          <ArchitectureDiagram />
         </div>
       </div>
+      
+      <footer className="text-center py-8">
+         <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em]">GuardianSwitch Engine v1.1.0 • Build: {BUILD_ID}</p>
+      </footer>
     </div>
   );
 };

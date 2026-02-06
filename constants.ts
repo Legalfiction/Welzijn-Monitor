@@ -2,23 +2,20 @@
 import { SystemSettings } from './types';
 
 export const DEFAULT_SETTINGS: SystemSettings = {
-  morningCheckTime: "09:00",
   contacts: [
     {
       id: '1',
-      name: "Willem de Boer",
+      name: "Aldo Huizinga",
       method: 'Email',
-      address: "willem.demo@example.com"
+      address: "aldo.huizinga@gmail.com"
     }
   ],
-  alertMessageTemplate: "GuardianSwitch Alert: Geen activiteit gedetecteerd voor de gebruiker sinds gisteren. Controleer a.u.b. onmiddellijk het welzijn.",
-  heartbeatIntervalMinutes: 60,
-  cloudUrl: '', // Wordt door de gebruiker ingevuld
+  alertMessageTemplate: "GuardianSwitch Alert: Onmiddellijke welzijnscheck vereist.",
+  cloudUrl: '', 
 };
 
 export const STORAGE_KEYS = {
-  SETTINGS: 'gs_settings_v3', // Versie verhoogd voor nieuw schema
-  LOGS: 'gs_logs',
-  ALERTS: 'gs_alerts',
-  LAST_HEARTBEAT: 'gs_last_heartbeat'
+  SETTINGS: 'gs_settings_live', 
+  LOGS: 'gs_logs_live',
+  ALERTS: 'gs_alerts_live'
 };
