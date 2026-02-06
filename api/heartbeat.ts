@@ -1,60 +1,25 @@
 
-import { GoogleGenAI } from "@google/genai";
-import { Resend } from 'resend';
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default function handler(req, res) {
+  // Zeer strikte CORS voor browsers
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
 
-  const source = req.body?.source || req.query?.source || 'Automatisering';
-  const timestamp = new Date().toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' });
-  const targetEmail = "aldo.huizinga@gmail.com";
+  const timestamp = new Date().toISOString();
   
-  if (!process.env.RESEND_API_KEY) {
-    return res.status(500).json({ error: "CONFIG_ERROR: RESEND_API_KEY ontbreekt." });
-  }
+  // Deze log verschijnt in Vercel Logs
+  console.log(`[${timestamp}] API Heartbeat aangeroepen via ${req.method}`);
 
-  const resend = new Resend(process.env.RESEND_API_KEY);
-
-  try {
-    let messageContent = `Guardian-update: Activiteit waargenomen via ${source}. Systeemstatus nominaal op ${timestamp}.`;
-    
-    if (process.env.API_KEY) {
-      try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const aiResponse = await ai.models.generateContent({
-          model: 'gemini-3-flash-preview',
-          contents: `Je bent GuardianSwitch, een senior welzijnsmonitor. 
-          Genereer een zeer kort (max 10 woorden) geruststellend bericht voor Aldo Huizinga. 
-          Context: Activiteit gedetecteerd via ${source}. 
-          Tijd: ${timestamp}. 
-          Toon: Professioneel en betrouwbaar.`,
-        });
-        messageContent = aiResponse.text || messageContent;
-      } catch (e) {
-        console.error("AI_FAIL", e);
-      }
-    }
-
-    const { error } = await resend.emails.send({
-      from: 'GuardianSwitch <onboarding@resend.dev>',
-      to: [targetEmail],
-      subject: `[OK] Welfare Check: ${source}`,
-      text: messageContent,
-    });
-
-    if (error) return res.status(400).json({ error: error.message });
-
-    return res.status(200).json({ 
-      status: "success", 
-      content: messageContent 
-    });
-
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message });
-  }
+  res.status(200).json({ 
+    status: "success", 
+    message: "GuardianSwitch Cloud is online",
+    serverTime: timestamp,
+    method: req.method
+  });
 }

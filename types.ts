@@ -14,9 +14,10 @@ export interface EmergencyContact {
 }
 
 export interface SystemSettings {
+  morningCheckTime: string;
   contacts: EmergencyContact[];
   alertMessageTemplate: string;
-  cloudUrl: string;
+  heartbeatIntervalMinutes: number;
 }
 
 export interface HeartbeatLog {

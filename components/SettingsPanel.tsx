@@ -12,6 +12,7 @@ const SettingsPanel: React.FC<Props> = ({ settings, onUpdate }) => {
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Sync local state if settings prop changes externally
   useEffect(() => {
     setLocalSettings(settings);
   }, [settings]);
@@ -19,6 +20,27 @@ const SettingsPanel: React.FC<Props> = ({ settings, onUpdate }) => {
   const handleChange = (newSettings: SystemSettings) => {
     setLocalSettings(newSettings);
     setHasChanges(true);
+  };
+
+  const updateContact = (id: string, field: keyof EmergencyContact, value: string) => {
+    const newContacts = localSettings.contacts.map(c => 
+      c.id === id ? { ...c, [field]: value } : c
+    );
+    handleChange({ ...localSettings, contacts: newContacts });
+  };
+
+  const addContact = () => {
+    const newContact: EmergencyContact = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: '',
+      method: 'Email',
+      address: ''
+    };
+    handleChange({ ...localSettings, contacts: [...localSettings.contacts, newContact] });
+  };
+
+  const removeContact = (id: string) => {
+    handleChange({ ...localSettings, contacts: localSettings.contacts.filter(c => c.id !== id) });
   };
 
   const handleSave = () => {
@@ -30,62 +52,101 @@ const SettingsPanel: React.FC<Props> = ({ settings, onUpdate }) => {
     }, 800);
   };
 
-  const isUrlValid = localSettings.cloudUrl.startsWith('https://');
-
   return (
-    <section className="bg-white border-4 border-slate-900 rounded-[2.5rem] p-8 shadow-[12px_12px_0px_0px_rgba(15,23,42,1)] flex flex-col h-full relative overflow-hidden">
-      <div className="flex items-center justify-between mb-8">
-        <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase italic tracking-tighter">
-          <i className="fas fa-bolt text-indigo-600"></i> Live Activatie
+    <section className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col h-full relative overflow-hidden">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <i className="fas fa-users-cog text-indigo-600"></i> Noodcontacten
         </h3>
-        {isUrlValid && (
-          <span className="bg-emerald-500 text-white text-[9px] font-black px-3 py-1 rounded-full animate-pulse">MONITORING</span>
+        {hasChanges && !isSaving && (
+          <span className="text-[10px] font-black text-amber-600 bg-amber-50 px-2 py-1 rounded-md border border-amber-100">
+            WIJZIGINGEN NIET OPGESLAGEN
+          </span>
         )}
       </div>
 
-      <div className="space-y-6 flex-1 overflow-y-auto mb-8 pr-2">
-        <div className={`p-6 rounded-3xl border-4 transition-all ${isUrlValid ? 'bg-emerald-50 border-emerald-500' : 'bg-amber-50 border-amber-400'}`}>
-          <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest block mb-2">Cloud API Basis URL</label>
-          <input
-            type="url"
-            value={localSettings.cloudUrl}
-            onChange={(e) => handleChange({ ...localSettings, cloudUrl: e.target.value })}
-            placeholder="https://jouw-project.vercel.app"
-            className="w-full bg-white border-2 border-slate-900 rounded-xl py-3 px-4 text-xs font-bold focus:ring-4 focus:ring-indigo-200 outline-none text-slate-900 shadow-inner"
-          />
-          <p className="text-[10px] text-slate-600 mt-3 leading-tight font-medium">
-            {isUrlValid ? "✅ Elke ontgrendeling triggert nu direct een mail naar Aldo." : "⚠️ Voer je URL in om de live koppeling te starten."}
-          </p>
-        </div>
-
-        <div className="pt-6 border-t-2 border-slate-100">
-          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Actieve Ontvanger</h4>
-          <div className="p-5 bg-slate-900 rounded-3xl border-2 border-slate-800">
-            <div className="flex items-center gap-4 text-white">
-              <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-sm font-black">AH</div>
+      <div className="space-y-4 flex-1 overflow-y-auto mb-6 pr-1">
+        {localSettings.contacts.map((contact, index) => (
+          <div key={contact.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 relative group animate-in fade-in slide-in-from-right-2">
+            <button 
+              onClick={() => removeContact(contact.id)}
+              className="absolute -top-2 -right-2 w-6 h-6 bg-white border border-slate-200 text-rose-500 rounded-full shadow-sm hover:bg-rose-50 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+            >
+              <i className="fas fa-times text-[10px]"></i>
+            </button>
+            
+            <div className="space-y-3">
               <div>
-                <p className="text-[10px] font-black uppercase text-indigo-400">Aldo Huizinga</p>
-                <p className="text-[11px] font-mono opacity-60">aldo.huizinga@gmail.com</p>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Naam Contact {index + 1}</label>
+                <input
+                  type="text"
+                  value={contact.name}
+                  onChange={(e) => updateContact(contact.id, 'name', e.target.value)}
+                  placeholder="Bijv. Jan Janssen"
+                  className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-sm font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <div className="w-1/3">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Methode</label>
+                  <select
+                    value={contact.method}
+                    onChange={(e) => updateContact(contact.id, 'method', e.target.value as any)}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-2 text-xs font-bold focus:ring-2 focus:ring-indigo-500 outline-none h-[38px]"
+                  >
+                    <option value="Email">Email</option>
+                    <option value="Telegram">Telegram</option>
+                    <option value="SMS">SMS</option>
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Adres / Nummer</label>
+                  <input
+                    type="text"
+                    value={contact.address}
+                    onChange={(e) => updateContact(contact.id, 'address', e.target.value)}
+                    placeholder={contact.method === 'Email' ? 'adres@mail.com' : 'Nummer of ID'}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        ))}
 
-        <div className="p-6 bg-slate-50 border-2 border-dashed border-slate-300 rounded-3xl">
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Systeem Protocol</p>
-           <p className="text-[11px] text-slate-600 font-bold italic">"Bij elke ontgrendeling: Genereer tekst via Gemini en stuur direct mail via Resend."</p>
+        <button 
+          onClick={addContact}
+          className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all text-xs font-bold flex items-center justify-center gap-2"
+        >
+          <i className="fas fa-plus-circle"></i> EXTRA CONTACT TOEVOEGEN
+        </button>
+
+        <div className="pt-4 border-t border-slate-100">
+           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block text-center">Dagelijkse Check-in Tijd</label>
+           <input
+             type="time"
+             value={localSettings.morningCheckTime}
+             onChange={(e) => handleChange({ ...localSettings, morningCheckTime: e.target.value })}
+             className="w-full bg-slate-100 border border-slate-200 rounded-xl py-3 px-4 text-center font-mono text-lg font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
+           />
         </div>
       </div>
 
       <button 
         onClick={handleSave}
         disabled={!hasChanges || isSaving}
-        className={`w-full py-5 rounded-2xl font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-4 shadow-xl border-4 border-slate-900 ${
-          hasChanges ? 'bg-indigo-600 text-white active:translate-y-1' : 'bg-slate-100 text-slate-400'
+        className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-lg ${
+          hasChanges 
+            ? 'bg-indigo-600 hover:bg-indigo-700 text-white active:scale-95' 
+            : 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
         }`}
       >
-        {isSaving ? <i className="fas fa-spinner animate-spin"></i> : <i className="fas fa-save"></i>}
-        <span>SLA CONFIGURATIE OP</span>
+        {isSaving ? (
+          <><i className="fas fa-spinner animate-spin"></i> OPSLAAN...</>
+        ) : (
+          <><i className="fas fa-save"></i> Instellingen Opslaan</>
+        )}
       </button>
     </section>
   );
