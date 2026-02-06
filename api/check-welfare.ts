@@ -1,9 +1,9 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { Resend } from 'resend';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-export default async function handler(req, res) {
-  // CORS instellingen toevoegen voor Dashboard interactie
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -13,14 +13,8 @@ export default async function handler(req, res) {
   const timestamp = new Date().toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' });
   const targetEmail = "aldo.huizinga@gmail.com";
 
-  console.log(`[AUTOMATISCHE CHECK] Controle gestart op ${timestamp}`);
-
-  if (!process.env.RESEND_API_KEY) {
-    return res.status(500).json({ error: "SYSTEEMFOUT: RESEND_API_KEY niet gevonden in Vercel settings." });
-  }
-  
-  if (!process.env.API_KEY) {
-    return res.status(500).json({ error: "SYSTEEMFOUT: Gemini API_KEY niet gevonden." });
+  if (!process.env.RESEND_API_KEY || !process.env.API_KEY) {
+    return res.status(500).json({ error: "CONFIG_ERROR: API sleutels ontbreken." });
   }
 
   const resend = new Resend(process.env.RESEND_API_KEY);
@@ -30,22 +24,19 @@ export default async function handler(req, res) {
     
     const aiResponse = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `GENEREER EEN NOODBERICHT. 
-      De gebruiker (Systeem Operator) heeft zich de afgelopen 24 uur niet gemeld bij het GuardianSwitch systeem. 
-      Dit is een officieel welzijns-alarm. 
-      Ontvanger: Aldo Huizinga.
-      Taal: Nederlands. 
-      Toon: Urgent, serieus, maar kalm. 
-      Instructie: Verzoek Aldo om onmiddellijk poolshoogte te nemen.`,
+      contents: `URGENT WELZIJNS ALARM. 
+      De gebruiker heeft zich niet gemeld. 
+      Bericht voor Aldo Huizinga. 
+      Toon: Ernstig maar beheerst. 
+      Vraag hem onmiddellijk contact op te nemen of de locatie te controleren.`,
     });
 
     const alarmContent = aiResponse.text;
 
-    // VERSTUUR HET ECHTE ALARM
-    const { data, error } = await resend.emails.send({
+    const { error } = await resend.emails.send({
       from: 'GuardianSwitch ALERT <onboarding@resend.dev>',
       to: [targetEmail],
-      subject: `🚨 URGENT: GuardianSwitch Welzijns-Alarm (${timestamp})`,
+      subject: `🚨 URGENT: GuardianSwitch Alarm (${timestamp})`,
       text: alarmContent,
     });
 
@@ -53,12 +44,9 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ 
       success: true, 
-      type: "ALARM_SENT",
-      message: "Het nood-protocol is succesvol uitgevoerd.",
       content: alarmContent 
     });
   } catch (error: any) {
-    console.error("Fout tijdens check:", error);
-    return res.status(500).json({ error: `CRITIEKE_FOUT: ${error.message}` });
+    return res.status(500).json({ error: error.message });
   }
 }
