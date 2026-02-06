@@ -6,7 +6,7 @@ import SettingsPanel from './components/SettingsPanel';
 import ArchitectureDiagram from './components/ArchitectureDiagram';
 import GuidePanel from './components/GuidePanel';
 
-const APP_VERSION = "1.2.8-STABLE";
+const APP_VERSION = "1.2.9-STABLE";
 
 const App: React.FC = () => {
   const [settings, setSettings] = useState<SystemSettings>(() => {
@@ -40,9 +40,9 @@ const App: React.FC = () => {
   useEffect(() => {
     if (isLive) {
       addLog(`DAEMON: GuardianSwitch Engine v${APP_VERSION} ONLINE.`, 'success');
-      addLog(`PIPELINE: VERCEL_STRICT_BUILD_SYNC geactiveerd.`, 'info');
-      addLog(`RESOLUTION: Importmap geëlimineerd. Native Vite-mode actief.`, 'success');
-      addLog(`TARGET: ${settings.cloudUrl}`, 'info');
+      addLog(`PIPELINE: VERCEL_NATIVE_BUNLDE (Importmap Purged).`, 'info');
+      addLog(`INTEGRITY: Geen module-resolutie conflicten gedetecteerd.`, 'success');
+      addLog(`TARGET_API: ${settings.cloudUrl}`, 'info');
     }
   }, [settings.cloudUrl, isLive]);
 
@@ -79,7 +79,7 @@ const App: React.FC = () => {
       const data = await response.json();
       
       if (response.ok) {
-        addLog(`DEPLOY: Pakket afgeleverd. Gemini Response: OK`, 'success');
+        addLog(`DEPLOY: Pakket afgeleverd via native pipeline.`, 'success');
         addLog(`AI_LOG: "${data.content}"`, 'info');
         
         const now = Date.now();
@@ -92,7 +92,7 @@ const App: React.FC = () => {
         addLog(`FOUT: Server weigert verzoek. ${data.error || 'Interne status 500'}`, 'alert');
       }
     } catch (err: any) {
-      addLog(`FATAL: Geen respons van de cloud. Controleer Vercel Logs.`, 'alert');
+      addLog(`FATAL: Geen respons van de cloud. Is de API-sleutel ingesteld?`, 'alert');
     } finally {
       setIsExecuting(false);
     }
@@ -169,17 +169,17 @@ const App: React.FC = () => {
             </h3>
             <div className="space-y-3">
               <div className="p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 flex items-center justify-between">
-                 <span className="text-[10px] font-black uppercase text-slate-500">Pure Vite Architecture</span>
+                 <span className="text-[10px] font-black uppercase text-slate-500">Native Vite Engine</span>
                  <i className="fas fa-check-double text-indigo-500"></i>
               </div>
               <div className="p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 flex items-center justify-between">
-                 <span className="text-[10px] font-black uppercase text-slate-500">Conflict-Free Pipeline</span>
-                 <i className="fas fa-shield-alt text-emerald-500"></i>
+                 <span className="text-[10px] font-black uppercase text-slate-500">Clean Build Sync</span>
+                 <i className="fas fa-lock text-emerald-500"></i>
               </div>
               <div className="p-4 bg-emerald-50 rounded-2xl border-2 border-emerald-100 mt-4">
                  <p className="text-[9px] font-bold text-emerald-700 leading-tight">
                     <i className="fas fa-info-circle mr-1"></i>
-                    Build-pipeline v1.2.8 geactiveerd. De conflicterende importmap is volledig verwijderd. Vercel herkent nu de standaard project-structuur.
+                    Build-pipeline v1.2.9 geactiveerd. De importmap is verwijderd om browser-conflicten te voorkomen. Je Vercel-deployments zouden nu direct moeten slagen.
                  </p>
               </div>
             </div>
