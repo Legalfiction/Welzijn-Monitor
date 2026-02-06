@@ -6,7 +6,7 @@ import SettingsPanel from './components/SettingsPanel';
 import ArchitectureDiagram from './components/ArchitectureDiagram';
 import GuidePanel from './components/GuidePanel';
 
-const APP_VERSION = "1.4.0-STABLE";
+const APP_VERSION = "1.5.0-FINAL-FIX";
 
 const App: React.FC = () => {
   const [settings, setSettings] = useState<SystemSettings>(() => {
@@ -39,10 +39,10 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (isLive) {
-      addLog(`DAEMON: GuardianSwitch Engine v${APP_VERSION} ONLINE.`, 'success');
-      addLog(`PIPELINE: VERCEL_NATIVE_STABLE (Pure Vite Mode)`, 'info');
-      addLog(`INTEGRITY: Importmap purged. Systeem is nu deterministisch.`, 'success');
-      addLog(`API_END: ${settings.cloudUrl}`, 'info');
+      addLog(`DAEMON: GuardianSwitch Engine v${APP_VERSION} INITIALISED.`, 'success');
+      addLog(`ARCHITECTUUR: Native Vite Pipeline (Importmap Verwijderd).`, 'info');
+      addLog(`INTEGRITEIT: Gebruik van deterministische module resolution.`, 'success');
+      addLog(`ENDPOINT: ${settings.cloudUrl}`, 'info');
     }
   }, [settings.cloudUrl, isLive]);
 
@@ -79,7 +79,7 @@ const App: React.FC = () => {
       const data = await response.json();
       
       if (response.ok) {
-        addLog(`DEPLOY: Pakket afgeleverd via stabiele pipeline.`, 'success');
+        addLog(`DEPLOY: Pakket afgeleverd via native stable pipeline.`, 'success');
         addLog(`AI_LOG: "${data.content}"`, 'info');
         
         const now = Date.now();
@@ -169,17 +169,17 @@ const App: React.FC = () => {
             </h3>
             <div className="space-y-3">
               <div className="p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 flex items-center justify-between">
-                 <span className="text-[10px] font-black uppercase text-slate-500">Pure Vite Architecture</span>
+                 <span className="text-[10px] font-black uppercase text-slate-500">Pure Vite Build Mode</span>
                  <i className="fas fa-check-double text-indigo-500"></i>
               </div>
               <div className="p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 flex items-center justify-between">
-                 <span className="text-[10px] font-black uppercase text-slate-500">No Resolution Conflicts</span>
+                 <span className="text-[10px] font-black uppercase text-slate-500">Zero Resolution Conflicts</span>
                  <i className="fas fa-lock text-emerald-500"></i>
               </div>
               <div className="p-4 bg-emerald-50 rounded-2xl border-2 border-emerald-100 mt-4">
                  <p className="text-[9px] font-bold text-emerald-700 leading-tight">
                     <i className="fas fa-info-circle mr-1"></i>
-                    Systeem v1.4.0 geactiveerd. De importmap is definitief verwijderd. Vercel herkent nu een standaard Vite-structuur. Dit garandeert een succesvolle build.
+                    De architectuur is nu gezuiverd. De importmap-fout die de Vercel-deployments blokkeerde is definitief verwijderd.
                  </p>
               </div>
             </div>
