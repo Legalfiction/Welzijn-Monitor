@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { SystemStatus, SystemSettings, HeartbeatLog } from './types';
 import { DEFAULT_SETTINGS, STORAGE_KEYS } from './constants';
@@ -7,7 +6,7 @@ import SettingsPanel from './components/SettingsPanel';
 import ArchitectureDiagram from './components/ArchitectureDiagram';
 import GuidePanel from './components/GuidePanel';
 
-const APP_VERSION = "1.2.3-STABLE";
+const APP_VERSION = "1.2.4-STABLE";
 
 const App: React.FC = () => {
   const [settings, setSettings] = useState<SystemSettings>(() => {
@@ -41,7 +40,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (isLive) {
       addLog(`DAEMON: GuardianSwitch Engine v${APP_VERSION} ONLINE.`, 'success');
-      addLog(`PIPELINE: VITE_NATIVE (Importmap Conflict Resolved)`, 'info');
+      addLog(`PIPELINE: VITE_PRODUCTION_PURE (Importmap removed)`, 'info');
       addLog(`TARGET: ${settings.cloudUrl}`, 'info');
     }
   }, [settings.cloudUrl, isLive]);
@@ -70,7 +69,7 @@ const App: React.FC = () => {
         mode: 'cors',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          source: 'DASHBOARD_V1.2.3',
+          source: `DASHBOARD_V${APP_VERSION}`,
           timestamp: Date.now(),
           integrity_verified: true
         }),
@@ -169,17 +168,17 @@ const App: React.FC = () => {
             </h3>
             <div className="space-y-3">
               <div className="p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 flex items-center justify-between">
-                 <span className="text-[10px] font-black uppercase text-slate-500">Vercel Edge Optimized</span>
-                 <i className="fas fa-cloud-upload-alt text-indigo-500"></i>
+                 <span className="text-[10px] font-black uppercase text-slate-500">Pure Vite Resolution</span>
+                 <i className="fas fa-check-circle text-indigo-500"></i>
               </div>
               <div className="p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 flex items-center justify-between">
                  <span className="text-[10px] font-black uppercase text-slate-500">Data Overwrite Protection</span>
                  <i className="fas fa-lock text-emerald-500"></i>
               </div>
-              <div className="p-4 bg-indigo-50 rounded-2xl border-2 border-indigo-100 mt-4">
-                 <p className="text-[9px] font-bold text-indigo-700 leading-tight">
+              <div className="p-4 bg-emerald-50 rounded-2xl border-2 border-emerald-100 mt-4">
+                 <p className="text-[9px] font-bold text-emerald-700 leading-tight">
                     <i className="fas fa-info-circle mr-1"></i>
-                    Build-pipeline v1.2.3 geactiveerd. Importmap conflict opgelost door Vite-native resolutie.
+                    Build-pipeline v1.2.4 geactiveerd. Alle conflicterende importmaps zijn verwijderd voor maximale stabiliteit op Vercel.
                  </p>
               </div>
             </div>
