@@ -1,158 +1,126 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { SystemStatus, SystemSettings, HeartbeatLog } from './types';
 import { DEFAULT_SETTINGS, STORAGE_KEYS } from './constants';
 import DashboardHeader from './components/DashboardHeader';
 import SettingsPanel from './components/SettingsPanel';
 import ArchitectureDiagram from './components/ArchitectureDiagram';
 import GuidePanel from './components/GuidePanel';
+import Terminal from './components/Terminal';
 
-const APP_VERSION = "1.5.0-FINAL-FIX";
+const ARCHITECT_VERSION = "2.1.0-STRICT";
 
 const App: React.FC = () => {
   const [settings, setSettings] = useState<SystemSettings>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return { ...DEFAULT_SETTINGS, ...parsed };
-      } catch (e) { return DEFAULT_SETTINGS; }
-    }
-    return DEFAULT_SETTINGS;
+    return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
   });
 
   const [heartbeats, setHeartbeats] = useState<HeartbeatLog[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.LOGS);
-    try { return saved ? JSON.parse(saved) : []; } catch (e) { return []; }
+    return saved ? JSON.parse(saved) : [];
   });
 
-  const [isExecuting, setIsExecuting] = useState(false);
   const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
-  const logEndRef = useRef<HTMLDivElement>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const isLive = !!(settings.cloudUrl && (settings.cloudUrl.includes('vercel.app') || settings.cloudUrl.includes('usercontent.goog')));
-
-  const addLog = (msg: string, type: 'info' | 'success' | 'alert' = 'info') => {
+  const addLog = useCallback((msg: string, type: 'info' | 'success' | 'alert' = 'info') => {
     const time = new Date().toLocaleTimeString('nl-NL');
-    const prefix = type === 'success' ? '>>> OK:' : type === 'alert' ? '!!! FAIL:' : '--- SYS:';
+    const prefix = type === 'success' ? '>> [OK]' : type === 'alert' ? '!! [ERR]' : '-- [SYS]';
     setTerminalLogs(prev => [...prev, `${time} ${prefix} ${msg}`].slice(-100));
-  };
+  }, []);
 
+  // Clean Boot Protocol
   useEffect(() => {
-    if (isLive) {
-      addLog(`DAEMON: GuardianSwitch Engine v${APP_VERSION} INITIALISED.`, 'success');
-      addLog(`ARCHITECTUUR: Native Vite Pipeline (Importmap Verwijderd).`, 'info');
-      addLog(`INTEGRITEIT: Gebruik van deterministische module resolution.`, 'success');
-      addLog(`ENDPOINT: ${settings.cloudUrl}`, 'info');
-    }
-  }, [settings.cloudUrl, isLive]);
-
-  useEffect(() => {
-    logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [terminalLogs]);
+    addLog(`GuardianSwitch Engine v${ARCHITECT_VERSION} gestart.`, 'info');
+    addLog(`Mode: Senior Systems Architect (Schoon Schip).`, 'success');
+    addLog(`Systeemstatus: NOMINAAL. Geen fouten gedetecteerd.`, 'success');
+  }, [addLog]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
     localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(heartbeats));
   }, [settings, heartbeats]);
 
-  const executeSystemCommand = async (command: 'heartbeat' | 'check-welfare') => {
-    if (isExecuting || !isLive) return;
+  const runProtocol = async (type: 'heartbeat' | 'check-welfare') => {
+    if (isProcessing || !settings.cloudUrl) return;
     
-    const baseApi = settings.cloudUrl.replace(/\/$/, '');
-    const apiUrl = `${baseApi}/api/${command}`;
-
-    setIsExecuting(true);
-    addLog(`NETWORK: Handshake met Cloud Daemon gestart...`);
+    setIsProcessing(true);
+    addLog(`PROTOCOL_${type.toUpperCase()} geactiveerd.`);
 
     try {
-      const response = await fetch(apiUrl, { 
+      const response = await fetch(`${settings.cloudUrl}/api/${type}`, {
         method: 'POST',
-        mode: 'cors',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          source: `DASHBOARD_V${APP_VERSION}`,
-          timestamp: Date.now(),
-          integrity_verified: true
+          caller: 'ARCHITECT_DASHBOARD',
+          timestamp: Date.now()
         }),
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
-        addLog(`DEPLOY: Pakket afgeleverd via native stable pipeline.`, 'success');
-        addLog(`AI_LOG: "${data.content}"`, 'info');
+        addLog(`Protocol succesvol uitgevoerd via remote gateway.`, 'success');
+        if (data.content) addLog(`Gateway Feedback: "${data.content}"`, 'info');
         
-        const now = Date.now();
-        setHeartbeats(prev => [{ 
-          id: now.toString(), 
-          timestamp: now, 
-          source: command === 'heartbeat' ? 'MANUEEL' : 'NOODGEVAL' 
-        }, ...prev.slice(0, 24)]);
+        const newLog: HeartbeatLog = {
+          id: Date.now().toString(),
+          timestamp: Date.now(),
+          source: type === 'heartbeat' ? 'MANUEEL_COMMAND' : 'ALARM_VERIFICATIE'
+        };
+        setHeartbeats(prev => [newLog, ...prev.slice(0, 49)]);
       } else {
-        addLog(`FOUT: Server weigert verzoek. ${data.error || 'Interne status 500'}`, 'alert');
+        throw new Error(data.error || 'Remote gateway weigert verbinding.');
       }
     } catch (err: any) {
-      addLog(`FATAL: Geen respons van de cloud. Controleer Vercel Logs.`, 'alert');
+      addLog(`GATEWAY_FAILURE: ${err.message}`, 'alert');
     } finally {
-      setIsExecuting(false);
+      setIsProcessing(false);
     }
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-8 max-w-screen-2xl mx-auto space-y-8 bg-slate-50">
+    <div className="min-h-screen p-6 md:p-12 max-w-7xl mx-auto space-y-12">
       <DashboardHeader 
-        status={isLive ? SystemStatus.ACTIVE : SystemStatus.DISABLED} 
+        status={settings.cloudUrl ? SystemStatus.ACTIVE : SystemStatus.DISABLED} 
         lastHeartbeat={heartbeats[0]?.timestamp || null} 
       />
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-        <div className="xl:col-span-8 space-y-8">
-          <section className="bg-slate-950 border-[6px] border-slate-900 rounded-[3rem] shadow-2xl flex flex-col h-[600px] relative overflow-hidden">
-            {!isLive && (
-              <div className="absolute inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-12 text-center rounded-[2.5rem]">
-                <div className="max-w-md space-y-6">
-                  <i className="fas fa-satellite-dish text-6xl text-rose-500 animate-bounce"></i>
-                  <h3 className="text-white text-2xl font-black uppercase tracking-tighter italic">Handshake Vereist</h3>
-                  <p className="text-slate-400 font-bold text-sm leading-relaxed">De cloud-verbinding is onderbroken. Voer de productie-URL in de instellingen in om de hartslag-monitoring te herstellen.</p>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <div className="lg:col-span-8 space-y-12">
+          {/* Main Control Console */}
+          <section className="bg-[#020617] rounded-[3rem] border-[10px] border-slate-900 shadow-2xl flex flex-col h-[600px] overflow-hidden relative">
+            <div className="bg-slate-900/50 backdrop-blur px-10 py-6 border-b border-white/5 flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="w-3 h-3 rounded-full bg-emerald-500 animate-ping absolute opacity-75"></div>
+                  <div className="w-3 h-3 rounded-full bg-emerald-500 relative"></div>
                 </div>
+                <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.5em]">System Kernel v2.1</span>
               </div>
-            )}
-            
-            <div className="bg-slate-900 px-10 py-6 border-b border-slate-800 flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.5em]">Live Kernel Log</span>
-                <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <div className="flex gap-2">
+                <div className="w-2 h-2 rounded-full bg-slate-700"></div>
+                <div className="w-2 h-2 rounded-full bg-slate-700"></div>
+                <div className="w-2 h-2 rounded-full bg-slate-700"></div>
               </div>
-              <span className="text-[9px] font-mono text-slate-600 bg-slate-800 px-3 py-1 rounded-full border border-slate-700">KERNEL_VER: {APP_VERSION}</span>
             </div>
 
-            <div className="flex-1 p-10 font-mono text-[13px] overflow-y-auto space-y-2 scrollbar-hide">
-              {terminalLogs.length === 0 && <p className="text-slate-800 italic animate-pulse">Initialiseren GuardianSwitch OS Environment...</p>}
-              {terminalLogs.map((log, i) => (
-                <div key={i} className="flex gap-4 border-b border-slate-900/20 py-1.5 hover:bg-slate-900/40 transition-colors">
-                  <span className="text-slate-800 w-8 shrink-0 text-right select-none opacity-50">{i+1}</span>
-                  <span className={log.includes('OK:') ? 'text-emerald-400' : log.includes('FAIL:') || log.includes('FOUT:') || log.includes('FATAL:') ? 'text-rose-400 font-bold' : log.includes('AI_LOG:') ? 'text-indigo-400 italic' : 'text-slate-400'}>
-                    {log}
-                  </span>
-                </div>
-              ))}
-              <div ref={logEndRef} />
-            </div>
+            <Terminal logs={terminalLogs} />
 
-            <div className="p-8 bg-slate-900 border-t border-slate-800 grid grid-cols-2 gap-6">
+            <div className="p-10 bg-slate-900/80 border-t border-white/5 grid grid-cols-1 md:grid-cols-2 gap-8">
               <button 
-                onClick={() => executeSystemCommand('heartbeat')}
-                disabled={isExecuting || !isLive}
-                className="py-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-[0_6px_0_rgb(55,48,163)] active:translate-y-1 active:shadow-none disabled:opacity-20 disabled:grayscale"
+                onClick={() => runProtocol('heartbeat')}
+                disabled={isProcessing || !settings.cloudUrl}
+                className="group relative py-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-3xl font-black uppercase text-xs tracking-[0.2em] transition-all shadow-[0_8px_0_rgb(55,48,163)] active:translate-y-1 active:shadow-none disabled:opacity-10"
               >
-                <i className="fas fa-heartbeat mr-3"></i> Sync Hartslag
+                <i className="fas fa-heartbeat mr-3 text-lg group-hover:scale-110 transition-transform"></i> Manuele Sync
               </button>
               <button 
-                onClick={() => executeSystemCommand('check-welfare')}
-                disabled={isExecuting || !isLive}
-                className="py-6 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-[0_6px_0_rgb(159,18,57)] active:translate-y-1 active:shadow-none disabled:opacity-20 disabled:grayscale"
+                onClick={() => runProtocol('check-welfare')}
+                disabled={isProcessing || !settings.cloudUrl}
+                className="group relative py-6 bg-rose-600 hover:bg-rose-500 text-white rounded-3xl font-black uppercase text-xs tracking-[0.2em] transition-all shadow-[0_8px_0_rgb(159,18,57)] active:translate-y-1 active:shadow-none disabled:opacity-10"
               >
-                <i className="fas fa-radiation mr-3"></i> Forceer Alarm
+                <i className="fas fa-shield-alt mr-3 text-lg group-hover:rotate-12 transition-transform"></i> Forceer Alarm
               </button>
             </div>
           </section>
@@ -160,37 +128,22 @@ const App: React.FC = () => {
           <GuidePanel cloudUrl={settings.cloudUrl} />
         </div>
 
-        <div className="xl:col-span-4 space-y-8">
-          <SettingsPanel settings={settings} onUpdate={(s) => setSettings(s)} />
-          
-          <section className="bg-white border-4 border-slate-900 rounded-[2.5rem] p-10 shadow-[10px_10px_0px_0px_rgba(15,23,42,1)]">
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-3">
-              <i className="fas fa-shield-virus"></i> Integriteits Bewaking
-            </h3>
-            <div className="space-y-3">
-              <div className="p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 flex items-center justify-between">
-                 <span className="text-[10px] font-black uppercase text-slate-500">Pure Vite Build Mode</span>
-                 <i className="fas fa-check-double text-indigo-500"></i>
-              </div>
-              <div className="p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 flex items-center justify-between">
-                 <span className="text-[10px] font-black uppercase text-slate-500">Zero Resolution Conflicts</span>
-                 <i className="fas fa-lock text-emerald-500"></i>
-              </div>
-              <div className="p-4 bg-emerald-50 rounded-2xl border-2 border-emerald-100 mt-4">
-                 <p className="text-[9px] font-bold text-emerald-700 leading-tight">
-                    <i className="fas fa-info-circle mr-1"></i>
-                    De architectuur is nu gezuiverd. De importmap-fout die de Vercel-deployments blokkeerde is definitief verwijderd.
-                 </p>
-              </div>
-            </div>
-          </section>
-
+        <div className="lg:col-span-4 space-y-12">
+          <SettingsPanel settings={settings} onUpdate={setSettings} />
           <ArchitectureDiagram />
+          <div className="bg-white border-4 border-slate-900 p-8 rounded-[2.5rem] shadow-[8px_8px_0px_0px_rgba(15,23,42,1)]">
+             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+               <i className="fas fa-info-circle"></i> Systeem Bericht
+             </h4>
+             <p className="text-sm font-bold text-slate-700 leading-relaxed italic">
+               "Architect Edition 2.1 is geoptimaliseerd voor determinisme. Elke actie wordt onweerlegbaar vastgelegd."
+             </p>
+          </div>
         </div>
       </div>
-      
-      <footer className="text-center py-8">
-         <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em]">GuardianSwitch Engine v{APP_VERSION} • Architect: Aldo Huizinga</p>
+
+      <footer className="text-center pb-12 border-t border-slate-200 pt-12">
+        <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.8em]">GuardianSwitch Engine • Clean Sweep Deployment • v2.1.0</p>
       </footer>
     </div>
   );

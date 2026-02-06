@@ -3,40 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GuardianSwitch | Slimme Welzijnsbewaking</title>
-    
-    <!-- PWA & Mobile Meta Tags -->
+    <title>GuardianSwitch | Senior Systems Architect Edition</title>
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#ffffff">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Guardian">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/5061/5061180.png">
-
+    <meta name="theme-color" content="#4f46e5">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
-        
-        :root {
-            --bg-color: #f8fafc;
-        }
-
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg-color);
-            color: #0f172a;
-            min-height: 100vh;
-            margin: 0;
-            overflow-x: hidden;
-        }
-
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #0f172a; overflow-x: hidden; }
         .mono { font-family: 'JetBrains Mono', monospace; }
-        
-        /* Custom scrollbar for terminal feel */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .safety-grid { background-size: 40px 40px; background-image: radial-gradient(circle, #e2e8f0 1px, transparent 1px); }
     </style>
 <script type="importmap">
 {
@@ -53,7 +31,7 @@
 }
 </script>
 </head>
-<body>
+<body class="safety-grid">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
 </body>
