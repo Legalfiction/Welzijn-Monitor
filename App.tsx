@@ -6,7 +6,7 @@ import SettingsPanel from './components/SettingsPanel';
 import ArchitectureDiagram from './components/ArchitectureDiagram';
 import GuidePanel from './components/GuidePanel';
 
-const APP_VERSION = "1.2.5-STABLE";
+const APP_VERSION = "1.2.6-STABLE";
 
 const App: React.FC = () => {
   const [settings, setSettings] = useState<SystemSettings>(() => {
@@ -40,7 +40,8 @@ const App: React.FC = () => {
   useEffect(() => {
     if (isLive) {
       addLog(`DAEMON: GuardianSwitch Engine v${APP_VERSION} ONLINE.`, 'success');
-      addLog(`PIPELINE: VERCEL_NATIVE_STABLE (Conflict Resolved)`, 'info');
+      addLog(`PIPELINE: VERCEL_NATIVE_RESOLVE (Final Stability Fix)`, 'info');
+      addLog(`STATUS: Conflict-vrije module loading geactiveerd.`, 'success');
       addLog(`TARGET: ${settings.cloudUrl}`, 'info');
     }
   }, [settings.cloudUrl, isLive]);
@@ -168,17 +169,17 @@ const App: React.FC = () => {
             </h3>
             <div className="space-y-3">
               <div className="p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 flex items-center justify-between">
-                 <span className="text-[10px] font-black uppercase text-slate-500">Native Vercel Pipeline</span>
+                 <span className="text-[10px] font-black uppercase text-slate-500">Pure Vite Architecture</span>
                  <i className="fas fa-check-double text-indigo-500"></i>
               </div>
               <div className="p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 flex items-center justify-between">
-                 <span className="text-[10px] font-black uppercase text-slate-500">Data Integrity Guard</span>
-                 <i className="fas fa-lock text-emerald-500"></i>
+                 <span className="text-[10px] font-black uppercase text-slate-500">Conflict-Free Pipeline</span>
+                 <i className="fas fa-shield-alt text-emerald-500"></i>
               </div>
               <div className="p-4 bg-emerald-50 rounded-2xl border-2 border-emerald-100 mt-4">
                  <p className="text-[9px] font-bold text-emerald-700 leading-tight">
                     <i className="fas fa-info-circle mr-1"></i>
-                    Build-pipeline v1.2.5 geactiveerd. Importmap conflict is geëlimineerd. Deployment zou nu vlekkeloos moeten verlopen.
+                    Build-pipeline v1.2.6 geactiveerd. De importmap is definitief verwijderd. Vercel herkent nu een standaard Vite project.
                  </p>
               </div>
             </div>
