@@ -7,7 +7,7 @@ import SettingsPanel from './components/SettingsPanel';
 import ArchitectureDiagram from './components/ArchitectureDiagram';
 import GuidePanel from './components/GuidePanel';
 
-const BUILD_ID = "PROD_HUIZINGA_V3_STABLE";
+const APP_VERSION = "1.2.1-STABLE";
 
 const App: React.FC = () => {
   const [settings, setSettings] = useState<SystemSettings>(() => {
@@ -30,7 +30,7 @@ const App: React.FC = () => {
   const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
   const logEndRef = useRef<HTMLDivElement>(null);
 
-  const isLive = settings.cloudUrl && (settings.cloudUrl.includes('vercel.app') || settings.cloudUrl.includes('usercontent.goog'));
+  const isLive = !!(settings.cloudUrl && (settings.cloudUrl.includes('vercel.app') || settings.cloudUrl.includes('usercontent.goog')));
 
   const addLog = (msg: string, type: 'info' | 'success' | 'alert' = 'info') => {
     const time = new Date().toLocaleTimeString('nl-NL');
@@ -40,7 +40,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (isLive) {
-      addLog(`DAEMON: Welzijns-integratie actief op ${settings.cloudUrl}`, 'success');
+      addLog(`DAEMON: Welzijns-integratie v${APP_VERSION} actief op ${settings.cloudUrl}`, 'success');
       addLog(`SECURITY: Zonnewoud exclusie-protocol operationeel.`, 'info');
     }
   }, [settings.cloudUrl, isLive]);
@@ -69,9 +69,9 @@ const App: React.FC = () => {
         mode: 'cors',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          source: 'DASHBOARD_V3',
+          source: 'DASHBOARD_STABLE',
           timestamp: Date.now(),
-          integrity_check: true
+          version: APP_VERSION
         }),
       });
       
@@ -88,10 +88,10 @@ const App: React.FC = () => {
           source: command === 'heartbeat' ? 'MANUEEL' : 'URGENT' 
         }, ...prev.slice(0, 24)]);
       } else {
-        addLog(`STATUS: ${data.error || 'Onbekende fout'}`, 'alert');
+        addLog(`STATUS: ${data.error || 'Server Error'}`, 'alert');
       }
     } catch (err: any) {
-      addLog(`CRITICAL: Verbinding met backend mislukt.`, 'alert');
+      addLog(`CRITICAL: Verbinding met backend mislukt. Controleer CORS en URL.`, 'alert');
     } finally {
       setIsExecuting(false);
     }
@@ -122,6 +122,7 @@ const App: React.FC = () => {
                 <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.5em]">Live Kernel Log</span>
                 <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
               </div>
+              <span className="text-[9px] font-mono text-slate-600">VER: {APP_VERSION}</span>
             </div>
 
             <div className="flex-1 p-10 font-mono text-[13px] overflow-y-auto space-y-1.5 scrollbar-hide">
@@ -177,7 +178,7 @@ const App: React.FC = () => {
               <div className="p-4 bg-emerald-50 rounded-2xl border-2 border-emerald-100 mt-4">
                  <p className="text-[9px] font-bold text-emerald-700 leading-tight">
                     <i className="fas fa-check-circle mr-1"></i>
-                    Integriteits-check succesvol. Scripts zijn geconfigureerd om nooit bestaande data te overschrijven in het medisch dossier.
+                    Integriteits-check succesvol. Scripts zijn geconfigureerd om nooit bestaande data te overschrijven.
                  </p>
               </div>
             </div>
@@ -188,7 +189,7 @@ const App: React.FC = () => {
       </div>
       
       <footer className="text-center py-8">
-         <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em]">GuardianSwitch Kernel v1.2.0-STABLE • Architect: Aldo Huizinga</p>
+         <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em]">GuardianSwitch Kernel v{APP_VERSION} • Aldo Huizinga</p>
       </footer>
     </div>
   );
