@@ -7,7 +7,7 @@ import SettingsPanel from './components/SettingsPanel';
 import ArchitectureDiagram from './components/ArchitectureDiagram';
 import GuidePanel from './components/GuidePanel';
 
-const APP_VERSION = "1.2.2-STABLE";
+const APP_VERSION = "1.2.3-STABLE";
 
 const App: React.FC = () => {
   const [settings, setSettings] = useState<SystemSettings>(() => {
@@ -41,7 +41,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (isLive) {
       addLog(`DAEMON: GuardianSwitch Engine v${APP_VERSION} ONLINE.`, 'success');
-      addLog(`MODE: BUNDLED_STABLE (Deployment Fix Active)`, 'info');
+      addLog(`PIPELINE: VITE_NATIVE (Importmap Conflict Resolved)`, 'info');
       addLog(`TARGET: ${settings.cloudUrl}`, 'info');
     }
   }, [settings.cloudUrl, isLive]);
@@ -70,7 +70,7 @@ const App: React.FC = () => {
         mode: 'cors',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          source: 'DASHBOARD_V1.2.2',
+          source: 'DASHBOARD_V1.2.3',
           timestamp: Date.now(),
           integrity_verified: true
         }),
@@ -169,8 +169,8 @@ const App: React.FC = () => {
             </h3>
             <div className="space-y-3">
               <div className="p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 flex items-center justify-between">
-                 <span className="text-[10px] font-black uppercase text-slate-500">Auto-Deployment Fix</span>
-                 <i className="fas fa-tools text-indigo-500"></i>
+                 <span className="text-[10px] font-black uppercase text-slate-500">Vercel Edge Optimized</span>
+                 <i className="fas fa-cloud-upload-alt text-indigo-500"></i>
               </div>
               <div className="p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 flex items-center justify-between">
                  <span className="text-[10px] font-black uppercase text-slate-500">Data Overwrite Protection</span>
@@ -179,7 +179,7 @@ const App: React.FC = () => {
               <div className="p-4 bg-indigo-50 rounded-2xl border-2 border-indigo-100 mt-4">
                  <p className="text-[9px] font-bold text-indigo-700 leading-tight">
                     <i className="fas fa-info-circle mr-1"></i>
-                    Build-pipeline v1.2.2 geoptimaliseerd voor Vercel Edge. Type-check bypass actief om deployment-stagnatie te voorkomen.
+                    Build-pipeline v1.2.3 geactiveerd. Importmap conflict opgelost door Vite-native resolutie.
                  </p>
               </div>
             </div>
